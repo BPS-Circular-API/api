@@ -15,26 +15,25 @@ async def read_item(item_id):
     return {"item_id": item_id}
 
 
-
-@app.get("/status")
+# BPS website status
+@app.get("/website/status")
 async def website_status():
     req = Request("https://www.bpsdoha.net/")
     try:
         response = urlopen(req)
-        print('Website is working fine', response.getcode())
+        print("Website is working fine", response.getcode())
         return {"status": "Website is working fine", "code": response.getcode()}
     except HTTPError as e:
-        print('The server couldn\'t fulfill the request.', e.code)
-        return {"status": "The server couldn\'t fulfill the request.", "code": e.code}
+        print("The server couldn't fulfill the request.", e.code)
+        return {"status": "The server couldn't fulfill the request.", "code": e.code}
     except URLError as e:
-        print('We failed to reach the server: ', e.reason)
+        print("We failed to reach the server: ", e.reason)
         return  {"status": "We failed to reach the server: ", "reason": e.reason}
     except Exception as e:
         print('Error: ', e)
 
 
-# Get raw circular lists
-# circular/list/?category=ptm&receive=titles
+# Get RAW circular lists
 @app.get("/circular/list/")
 async def _get_circular_list(category: str, receive: str = "all"):
     ptm = ["https://www.bpsdoha.net/circular/category/40"]
@@ -52,6 +51,8 @@ async def _get_circular_list(category: str, receive: str = "all"):
 
     return get_circular_list(url, receive)
 
+
+# Get latest circular
 @app.get("/circular/latest/")
 async def _get_latest_circular(category: str, receive: str = "all"):
     ptm = ["https://www.bpsdoha.net/circular/category/40"]
