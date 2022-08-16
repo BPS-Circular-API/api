@@ -48,3 +48,21 @@ def get_circular_list(url: list, receive: str) -> list | None:
     return circulars if receive == "all" else titles if receive == "titles" else links if receive == "links" else None
 
 
+def get_latest_circular(category: list, receive: str) -> list | None:
+    titles, links, unprocessed_links, threads, old_titles = [], [], [], [], []
+    for URL in range(len(category)):
+        old_titles.append([])
+        unprocessed_links.append([])
+        threads.append(threading.Thread(target=lambda: per_url(category[URL], old_titles, unprocessed_links, URL)))
+        threads[-1].start()
+    for thread in threads:
+        thread.join()
+    for unprocessed_link in unprocessed_links:
+        for link in unprocessed_link:
+            links.append(f"https://bpsdoha.com{link}".strip())  # Keep in mind, {link} already has a / at the start
+    for old_title in old_titles:
+        titles += old_title
+
+    circulars = f"{titles[0]}||{links[0]}"
+    return circulars if receive == "all" else titles[0].strip() if receive == "titles" else links[0].strip() if receive == "links" else None
+
