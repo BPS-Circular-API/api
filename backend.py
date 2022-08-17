@@ -37,7 +37,7 @@ def get_circular_list(url: list, receive: str) -> list | None:
         titles += old_title
 
     # print(links)
-    circulars = [Circular(title, link) for title, link in zip(titles, links)]
+    circulars = [Circular(title.strip(), link.strip()) for title, link in zip(titles, links)]
     return circulars if receive == "all" else titles if receive == "titles" else links if receive == "links" else None
 
 
@@ -45,6 +45,6 @@ def get_latest_circular(category: list, receive: str):
     soup = bs4.BeautifulSoup(requests.get(category[0], headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     title = soup.select(".pd-title")[0].text
     link = "https://bpsdoha.com" + str(soup.select(".btn.btn-success")[0]["href"]).strip()  # Keep in mind, {link} already has a / at the start
-    circulars = Circular(title,link)
+    circulars = Circular(title.strip(),link.strip())
     return circulars if receive == "all" else title.strip() if receive == "titles" else link.strip() if receive == "links" else None
 
