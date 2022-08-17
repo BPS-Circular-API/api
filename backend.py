@@ -21,7 +21,7 @@ def per_url(url, old_titles, unprocessed_links, roll) -> None:
         unprocessed_links[roll].append(link["href"])
 
 
-def get_circular_list(url: list, receive: str) -> list | None:
+def get_circular_list(url: list, receive: str):
     titles, links, unprocessed_links, threads, old_titles = [], [], [], [], []
     for URL in range(len(url)):
         old_titles.append([])
@@ -36,7 +36,6 @@ def get_circular_list(url: list, receive: str) -> list | None:
     for old_title in old_titles:
         titles += old_title
 
-    # print(links)
     circulars = [Circular(title.strip(), link.strip()) for title, link in zip(titles, links)]
     return circulars if receive == "all" else titles if receive == "titles" else links if receive == "links" else None
 
@@ -47,4 +46,31 @@ def get_latest_circular(category: list, receive: str):
     link = "https://bpsdoha.com" + str(soup.select(".btn.btn-success")[0]["href"]).strip()  # Keep in mind, {link} already has a / at the start
     circulars = Circular(title.strip(),link.strip())
     return circulars if receive == "all" else title.strip() if receive == "titles" else link.strip() if receive == "links" else None
+
+def thread_function_for_get_download_url(title,URL,mutable):
+    soup = bs4.BeautifulSoup(requests.get(URL, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
+    titles_soup = soup.select(".pd-title")
+    for title_no in range(len(titles_soup)):
+        if str(titles_soup[title_no].text).strip() == title.strip():
+            mutable.append("https://bpsdoha.com" + str(soup.select(".btn.btn-success")[title_no]["href"]).strip())
+
+def get_download_url(title: str):
+    urls = [
+        "https://www.bpsdoha.net/circular/category/40", "https://www.bpsdoha.net/circular/category/38",
+        "https://www.bpsdoha.net/circular/category/38?start=20", "https://www.bpsdoha.net/circular/category/35",
+        "https://www.bpsdoha.net/circular/category/35?start=20"
+        ]
+    mutable,threads = [], []
+
+    for URL in urls:
+        threads.append(threading.Thread(target=lambda: thread_function_for_get_download_url(title,URL,mutable)))
+        threads[-1].start()
+    for thread in threads:
+        thread.join()
+    if mutable != []:
+        return mutable[0]
+    return None
+
+
+
 
