@@ -3,9 +3,12 @@ from backend import get_circular_list, get_latest_circular, get_download_url
 from pydantic import BaseModel
 
 
-class Item(BaseModel):
-    name: str
+class CatAndRecInput(BaseModel):
+    category: str
+    receive: str = "all"
 
+class TitleInput(BaseModel):
+    title: str
 
 app = FastAPI()
 
@@ -22,7 +25,8 @@ async def read_item(item_id):
 
 # Get RAW circular lists
 @app.get("/list/")
-async def _get_circular_list(category: str, receive: str = "all"):
+async def _get_circular_list(userinput: CatAndRecInput):
+    category, receive = userinput.category.lower(), userinput.receive.lower()
     ptm = ["https://www.bpsdoha.net/circular/category/40"]
     general = ["https://www.bpsdoha.net/circular/category/38",
                "https://www.bpsdoha.net/circular/category/38?start=20"]
@@ -40,7 +44,9 @@ async def _get_circular_list(category: str, receive: str = "all"):
 
 # Get latest circular
 @app.get("/latest/")
-async def _get_latest_circular(category: str, receive: str = "all"):
+async def _get_latest_circular(userinput: CatAndRecInput):
+    category, receive = userinput.category.lower(), userinput.receive.lower()
+
     ptm = ["https://www.bpsdoha.net/circular/category/40"]
     general = ["https://www.bpsdoha.net/circular/category/38",
                "https://www.bpsdoha.net/circular/category/38?start=20"]
@@ -56,10 +62,7 @@ async def _get_latest_circular(category: str, receive: str = "all"):
     return get_latest_circular(url, receive.lower())
 
 @app.get("/geturl/")
-async def _get_url(title: str):
+async def _get_url(userinput: TitleInput):
+    title = userinput.title
     return get_download_url(title)
 
-@app.get("/test/")
-async def test(e: Item):
-    print(e)
-    return {"item_name": "got it"}
