@@ -45,7 +45,6 @@ async def _get_circular_list(category: str, receive: str = "all"):
     url = ptm if category == "ptm" else general if category == "general" else exam if category == "exam" else None
     if url is None:
         return HTTPException(status_code=400, detail="Category not found")
-
     if not receive in ["all", "titles", "links"]:
         return HTTPException(status_code=400, detail="Receive not found")
 
@@ -60,13 +59,11 @@ async def _get_latest_circular(category: str, receive: str = "all"):
                "https://www.bpsdoha.net/circular/category/38?start=20"]
     exam = ["https://www.bpsdoha.net/circular/category/35",
             "https://www.bpsdoha.net/circular/category/35?start=20"]
-
+    
     url = ptm if category == "ptm" else general if category == "general" else exam if category == "exam" else None
     if url is None:
         return HTTPException(status_code=400, detail="Category not found")
-
     if not receive in ["all", "titles", "links"]:
         return HTTPException(status_code=400, detail="Receive not found")
-
-    e = get_latest_circular(url, receive)
-    return e
+    
+    return get_latest_circular(url, receive)
