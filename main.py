@@ -34,7 +34,7 @@ async def website_status():
 
 
 # Get RAW circular lists
-@app.get("/circular/list/")
+@app.get("/circular/list/{category}/{receive}")
 async def _get_circular_list(category: str, receive: str = "all"):
     ptm = ["https://www.bpsdoha.net/circular/category/40"]
     general = ["https://www.bpsdoha.net/circular/category/38",
@@ -53,7 +53,7 @@ async def _get_circular_list(category: str, receive: str = "all"):
 
 
 # Get latest circular
-@app.get("/circular/latest/")
+@app.get("/circular/latest/{category}/{receive}")
 async def _get_latest_circular(category: str, receive: str = "all"):
     ptm = ["https://www.bpsdoha.net/circular/category/40"]
     general = ["https://www.bpsdoha.net/circular/category/38",
