@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from backend import get_circular_list, get_latest_circular, get_download_url
+from backend import get_circular_list, get_latest_circular, get_download_url#, cached_latest_circular
 from pydantic import BaseModel
 
 
@@ -16,10 +16,6 @@ app = FastAPI()
 @app.get("/")
 async def root():
     return {"message": "Welcome to the BPS Circular API. Note that this is not an official API. Documentation can be found at https://raj.moonball.io/bpsapi/docs"}
-
-@app.get("/items/{item_id}")
-async def read_item(item_id):
-    return {"item_id": item_id}
 
 
 
@@ -63,6 +59,10 @@ async def _get_latest_circular(userinput: CatAndRecInput):
 
 @app.get("/geturl/")
 async def _get_url(userinput: TitleInput):
-    title = userinput.title
+    title = userinput.title.strip()
     return get_download_url(title)
+
+@app.get("/cached-latest/")
+async def _get_cached_latest_circular():
+    pass
 

@@ -1,6 +1,7 @@
 import bs4, requests, threading
 
 
+
 class Circular:
     def __init__(self, title, link):
         self.title = title
@@ -19,6 +20,7 @@ def per_url(url, old_titles, unprocessed_links, roll) -> None:
         old_titles[roll].append(title.text)
     for link in soup.select(".btn.btn-success"):
         unprocessed_links[roll].append(link["href"])
+
 
 
 def get_circular_list(url: list, receive: str):
@@ -40,6 +42,7 @@ def get_circular_list(url: list, receive: str):
     return circulars if receive == "all" else titles if receive == "titles" else links if receive == "links" else None
 
 
+
 def get_latest_circular(category: list, receive: str):
     soup = bs4.BeautifulSoup(requests.get(category[0], headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     title = soup.select(".pd-title")[0].text
@@ -47,12 +50,16 @@ def get_latest_circular(category: list, receive: str):
     circulars = Circular(title.strip(),link.strip())
     return circulars if receive == "all" else title.strip() if receive == "titles" else link.strip() if receive == "links" else None
 
+
+
 def thread_function_for_get_download_url(title,URL,mutable):
     soup = bs4.BeautifulSoup(requests.get(URL, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     titles_soup = soup.select(".pd-title")
     for title_no in range(len(titles_soup)):
         if str(titles_soup[title_no].text).strip() == title.strip():
             mutable.append("https://bpsdoha.com" + str(soup.select(".btn.btn-success")[title_no]["href"]).strip())
+
+
 
 def get_download_url(title: str):
     urls = [
@@ -67,10 +74,9 @@ def get_download_url(title: str):
         threads[-1].start()
     for thread in threads:
         thread.join()
-    if mutable != []:
+    if mutable:
         return mutable[0]
     return None
-
 
 
 
