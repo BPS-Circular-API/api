@@ -1,4 +1,4 @@
-import bs4, requests, threading
+import bs4, requests, threading, pickle, time
 
 
 
@@ -78,5 +78,31 @@ def get_download_url(title: str):
         return mutable[0]
     return None
 
+def store_latest_circular():
+    ptm = ["https://www.bpsdoha.net/circular/category/40"]
+    general = ["https://www.bpsdoha.net/circular/category/38", "https://www.bpsdoha.net/circular/category/38?start=20"]
+    exam = ["https://www.bpsdoha.net/circular/category/35","https://www.bpsdoha.net/circular/category/35?start=20"]
+    while True:
+        data = {
+            "ptm": get_latest_circular(ptm,"all"),
+            "general": get_latest_circular(general,"all"),
+            "exam": get_latest_circular(exam,"all")
+        }
+        with open("temp.pickle","wb") as f:
+            pickle.dump(data, f)
+        time.sleep(60*60)
 
+    
+
+def get_cached_latest_circular(category: str, receive: str):
+    with open("temp.pickle","rb") as f:
+        data = pickle.load(f)
+    circular = Circular(data[category].title,data[category].link)
+    return circular if receive == "all" else circular.title if receive == "titles" else circular.link if receive == "links" else None
+
+
+# this is a daemon thread, daemon process get autoterminated when the program ends, so dw bout the while loop
+# Also these two lines of code MUST be at the end of the program! I think you should add it to main.py?
+temp = threading.Thread(target=store_latest_circular,daemon=True)
+temp.start()
 
