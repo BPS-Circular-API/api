@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from backend import get_circular_list, get_latest_circular, get_download_url#, cached_latest_circular
+from backend import get_circular_list, get_latest_circular, get_download_url, get_cached_latest_circular
 from pydantic import BaseModel
 
 
@@ -61,8 +61,9 @@ async def _get_latest_circular(userinput: CatAndRecInput):
 async def _get_url(userinput: TitleInput):
     title = userinput.title.strip()
     return get_download_url(title)
-"""
+
+
 @app.get("/cached-latest/")
-async def _get_cached_latest_circular():
-    pass
-"""
+async def _get_cached_latest_circular(userinput: CatAndRecInput):
+    x = get_cached_latest_circular(userinput.category.lower(), userinput.receive.lower())
+    return x

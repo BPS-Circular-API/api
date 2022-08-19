@@ -90,19 +90,22 @@ def store_latest_circular():
         }
         with open("temp.pickle","wb") as f:
             pickle.dump(data, f)
-        time.sleep(60*60)
+        time.sleep(3600)
 
     
 
 def get_cached_latest_circular(category: str, receive: str):
     with open("temp.pickle","rb") as f:
         data = pickle.load(f)
-    circular = Circular(data[category].title,data[category].link)
+    circular = Circular(data[category].title, data[category].link)
     return circular if receive == "all" else circular.title if receive == "titles" else circular.link if receive == "links" else None
+
+
 
 
 # this is a daemon thread, daemon process get autoterminated when the program ends, so dw bout the while loop
 # Also these two lines of code MUST be at the end of the program! I think you should add it to main.py?
-temp = threading.Thread(target=store_latest_circular,daemon=True)
+temp = threading.Thread(target=store_latest_circular, daemon=True)
+print("starting thread")
 temp.start()
 
