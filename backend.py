@@ -1,5 +1,5 @@
 import bs4, requests, threading, pickle, time
-
+from rank_bm25 import BM25Okapi
 
 
 class Circular:
@@ -52,7 +52,7 @@ def get_latest_circular(category: list, receive: str):
 
 
 
-def thread_function_for_get_download_url(title,URL,mutable):
+def thread_function_for_get_download_url(title, URL ,mutable):
     soup = bs4.BeautifulSoup(requests.get(URL, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     titles_soup = soup.select(".pd-title")
     for title_no in range(len(titles_soup)):
@@ -101,6 +101,16 @@ def get_cached_latest_circular(category: str, receive: str):
     return circular if receive == "all" else circular.title if receive == "titles" else circular.link if receive == "links" else None
 
 
+def search(query, corpus):
+    for i in range(len(corpus)):
+        corpus[i] = corpus[i].lower()
+    query = query.lower()
+    tokenized_corpus = [doc.split(" ") for doc in corpus]
+    bm25 = BM25Okapi(tokenized_corpus)
+    tokenized_query = query.split(" ")
+
+    e = bm25.get_top_n(tokenized_query, corpus, n=1)
+    return e[0]
 
 
 # this is a daemon thread, daemon process get autoterminated when the program ends, so dw bout the while loop
