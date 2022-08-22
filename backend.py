@@ -52,12 +52,13 @@ def get_latest_circular(category: list, receive: str):
 
 
 
-def thread_function_for_get_download_url(title, URL ,mutable):
+def thread_function_for_get_download_url(title, URL, mutable):
     soup = bs4.BeautifulSoup(requests.get(URL, headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     titles_soup = soup.select(".pd-title")
     for title_no in range(len(titles_soup)):
-        if str(titles_soup[title_no].text).strip() == title.strip():
+        if str(titles_soup[title_no].text).strip().lower() == title.strip().lower():
             mutable.append("https://bpsdoha.com" + str(soup.select(".btn.btn-success")[title_no]["href"]).strip())
+            mutable.append(str(titles_soup[title_no].text).strip())
 
 
 
@@ -67,15 +68,15 @@ def get_download_url(title: str):
         "https://www.bpsdoha.net/circular/category/38?start=20", "https://www.bpsdoha.net/circular/category/35",
         "https://www.bpsdoha.net/circular/category/35?start=20"
         ]
-    mutable,threads = [], []
+    mutable, threads = [], []
 
     for URL in urls:
-        threads.append(threading.Thread(target=lambda: thread_function_for_get_download_url(title,URL,mutable)))
+        threads.append(threading.Thread(target=lambda: thread_function_for_get_download_url(title,URL, mutable)))
         threads[-1].start()
     for thread in threads:
         thread.join()
     if mutable:
-        return mutable[0]
+        return mutable[1], mutable[0]
     return None
 
 def store_latest_circular():
@@ -95,7 +96,7 @@ def store_latest_circular():
     
 
 def get_cached_latest_circular(category: str, receive: str):
-    with open("temp.pickle","rb") as f:
+    with open("temp.pickle", "rb") as f:
         data = pickle.load(f)
     circular = Circular(data[category].title, data[category].link)
     return circular if receive == "all" else circular.title if receive == "titles" else circular.link if receive == "links" else None

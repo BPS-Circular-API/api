@@ -77,6 +77,7 @@ async def _search(userinput: TitleInput):
     all_titles = get_circular_list(urls, "titles")
     print(all_titles)
     res = search(title, all_titles)
+    res = get_download_url(res)
     return res
 
 
