@@ -57,10 +57,6 @@ async def _get_latest_circular(userinput: CatAndRecInput):
     
     return get_latest_circular(url, receive.lower())
 
-@app.get("/downloadurl/")
-async def _get_url(userinput: TitleInput):
-    title = userinput.title.strip()
-    return get_download_url(title)
 
 
 @app.get("/search/")
