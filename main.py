@@ -59,16 +59,9 @@ async def _get_latest_circular(userinput: CatAndRecInput):
     return get_latest_circular(url, receive.lower())
 
 
-@app.get("/downloadurl/")
-async def _get_url(userinput: TitleInput):
-    title = userinput.title.strip()
-    return get_download_url(title)
-
-
 @app.get("/search/")
 async def _search(userinput: TitleInput):
     title = userinput.title
-    print(title)
     urls = [
         "https://www.bpsdoha.net/circular/category/40", "https://www.bpsdoha.net/circular/category/38",
         "https://www.bpsdoha.net/circular/category/38?start=20", "https://www.bpsdoha.net/circular/category/35",
@@ -77,12 +70,10 @@ async def _search(userinput: TitleInput):
 
     all_titles = get_circular_list(urls, "titles")
     res = get_most_similar_sentence(title, all_titles)
-    print(res)
     return get_download_url(res)
 
 
 @app.get("/cached-latest/")
 async def _get_cached_latest_circular(userinput: CatAndRecInput):
-    x = get_cached_latest_circular(
-        userinput.category.lower(), userinput.receive.lower())
+    x = get_cached_latest_circular(userinput.category.lower(), userinput.receive.lower())
     return x

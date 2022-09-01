@@ -1,9 +1,4 @@
-import bs4
-import nltk
-import requests
-import threading
-import pickle
-import time
+import bs4, nltk, requests, threading, pickle, time
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -90,6 +85,8 @@ def get_download_url(title: str):
     if mutable:
         return mutable[1], mutable[0]
     return None
+
+
 
 
 def store_latest_circular():
