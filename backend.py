@@ -1,7 +1,10 @@
-import bs4, nltk, requests, threading, pickle, time
+import os
+
+import bs4, requests, threading, pickle, time
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+import pypdfium2 as pdfium
 
 
 class Circular:
@@ -167,8 +170,39 @@ def get_most_similar_sentence(keyword: str, sentences: list):
             return a[i]
 
 
-# this is a daemon thread, daemon process get autoterminated when the program ends, so dw bout the while loop
-# Also these two lines of code MUST be at the end of the program! I think you should add it to main.py?
+def get_png(download_url) -> str:
+    windows_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
+    file_id = download_url.split('=')[1]  # Split the link by :
+    file_id = file_id.split(":")[0]
+
+
+    if os.path.isfile(f"./circularimages/{file_id}.png"):
+        return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
+
+    pdf_file = requests.get(download_url, headers=windows_headers)
+
+
+    with open(f"./{file_id}.pdf", "wb") as f:
+        f.write(pdf_file.content)
+
+    pdf = pdfium.PdfDocument(f"./{file_id}.pdf")
+    page = pdf[0]
+    pil_image = page.render_topil(
+        scale=2,
+        rotation=0,
+        crop=(0, 0, 0, 0),
+        colour=(255, 255, 255, 255),
+        annotations=True,
+        greyscale=False,
+        optimise_mode=pdfium.OptimiseMode.NONE,
+    )
+    pil_image.save(f"./circularimages/{file_id}.png")
+    os.remove(f"./{file_id}.pdf")
+
+    return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
+
+
+# this is a daemon thread, daemon process get auto-terminated when the program ends, so don't worry about the while loop
 temp = threading.Thread(target=store_latest_circular, daemon=True)
-print("starting thread")
+print("Starting latest circular thread")
 temp.start()

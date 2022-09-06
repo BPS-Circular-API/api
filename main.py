@@ -11,6 +11,9 @@ class CatAndRecInput(BaseModel):
 class TitleInput(BaseModel):
     title: str
 
+class UrlInput(BaseModel):
+    url: str
+
 
 app = FastAPI()
 
@@ -77,3 +80,7 @@ async def _search(userinput: TitleInput):
 async def _get_cached_latest_circular(userinput: CatAndRecInput):
     x = get_cached_latest_circular(userinput.category.lower(), userinput.receive.lower())
     return x
+
+@app.get("/getpng")
+async def _get_png(urlinput: UrlInput):
+    return get_png(urlinput.url)
