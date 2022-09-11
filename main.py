@@ -2,6 +2,9 @@ from fastapi import FastAPI, HTTPException
 from backend import *
 from pydantic import BaseModel
 
+ptm = cat_dict["ptm"]
+general = cat_dict["general"]
+exam = cat_dict["exam"]
 
 class CatAndRecInput(BaseModel):
     category: str
@@ -20,18 +23,13 @@ app = FastAPI()
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the BPS Circular API. Note that this is not an official API. Documentation can be found at https://raj.moonball.io/bpsapi/docs"}
+    return {"message": "Welcome to the BPS Circular API. Note that this is not an official API. Documentation can be found at https://bpsapi.rajtech.me/docs"}
 
 
 # Get RAW circular lists
 @app.get("/list/")
 async def _get_circular_list(userinput: CatAndRecInput):
     category, receive = userinput.category.lower(), userinput.receive.lower()
-    ptm = ["https://www.bpsdoha.net/circular/category/40"]
-    general = ["https://www.bpsdoha.net/circular/category/38",
-               "https://www.bpsdoha.net/circular/category/38?start=20"]
-    exam = ["https://www.bpsdoha.net/circular/category/35",
-            "https://www.bpsdoha.net/circular/category/35?start=20"]
 
     url = ptm if category == "ptm" else general if category == "general" else exam if category == "exam" else None
     if url is None:
@@ -47,12 +45,6 @@ async def _get_circular_list(userinput: CatAndRecInput):
 async def _get_latest_circular(userinput: CatAndRecInput):
     category, receive = userinput.category.lower(), userinput.receive.lower()
 
-    ptm = ["https://www.bpsdoha.net/circular/category/40"]
-    general = ["https://www.bpsdoha.net/circular/category/38",
-               "https://www.bpsdoha.net/circular/category/38?start=20"]
-    exam = ["https://www.bpsdoha.net/circular/category/35",
-            "https://www.bpsdoha.net/circular/category/35?start=20"]
-
     url = ptm if category == "ptm" else general if category == "general" else exam if category == "exam" else None
     if url is None:
         return HTTPException(status_code=400, detail="Category not found")
@@ -65,13 +57,8 @@ async def _get_latest_circular(userinput: CatAndRecInput):
 @app.get("/search/")
 async def _search(userinput: TitleInput):
     title = userinput.title
-    urls = [
-        "https://www.bpsdoha.net/circular/category/40", "https://www.bpsdoha.net/circular/category/38",
-        "https://www.bpsdoha.net/circular/category/38?start=20", "https://www.bpsdoha.net/circular/category/35",
-        "https://www.bpsdoha.net/circular/category/35?start=20"
-    ]
 
-    all_titles = get_circular_list(urls, "titles")
+    all_titles = get_circular_list(pages_list, "titles")
     res = get_most_similar_sentence(title, all_titles)
     return get_download_url(res)
 

@@ -6,6 +6,41 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import pypdfium2 as pdfium
 
+cat_dict = {
+    "ptm": [
+        "https://www.bpsdoha.net/circular/category/40", # PTM (Page 1)
+        "https://www.bpsdoha.net/circular/category/40?start=20" # PTM (Page 2)
+        ],
+
+    "general": [
+        "https://www.bpsdoha.net/circular/category/38",  # General (Page 1)
+        "https://www.bpsdoha.net/circular/category/38?start=20",  # General (Page 2)
+        "https://www.bpsdoha.net/circular/category/38?start=40"  # General (Page 3)
+        "https://www.bpsdoha.net/circular/category/38?start=60"  # General (Page 4)
+    ],
+
+    "exam": [
+        "https://www.bpsdoha.net/circular/category/35",  # Exam (Page 1)
+        "https://www.bpsdoha.net/circular/category/35?start=20"  # Exam (Page 2)
+        "https://www.bpsdoha.net/circular/category/35?start=40"  # Exam (Page 3)
+    ]
+}
+
+pages_list = [
+    "https://www.bpsdoha.net/circular/category/40",  # PTM (Page 1)
+    "https://www.bpsdoha.net/circular/category/40?start=20",  # PTM (Page 2)
+
+    "https://www.bpsdoha.net/circular/category/38",  # General (Page 1)
+    "https://www.bpsdoha.net/circular/category/38?start=20",  # General (Page 2)
+    "https://www.bpsdoha.net/circular/category/38?start=40"  # General (Page 3)
+    "https://www.bpsdoha.net/circular/category/38?start=60"  # General (Page 4)
+
+    "https://www.bpsdoha.net/circular/category/35",  # Exam (Page 1)
+    "https://www.bpsdoha.net/circular/category/35?start=20"  # Exam (Page 2)
+    "https://www.bpsdoha.net/circular/category/35?start=40"  # Exam (Page 3)
+
+]
+
 
 class Circular:
     def __init__(self, title, link):
@@ -72,14 +107,9 @@ def thread_function_for_get_download_url(title, URL, mutable):
 
 
 def get_download_url(title: str):
-    urls = [
-        "https://www.bpsdoha.net/circular/category/40", "https://www.bpsdoha.net/circular/category/38",
-        "https://www.bpsdoha.net/circular/category/38?start=20", "https://www.bpsdoha.net/circular/category/35",
-        "https://www.bpsdoha.net/circular/category/35?start=20"
-    ]
     mutable, threads = [], []
 
-    for URL in urls:
+    for URL in pages_list:
         threads.append(threading.Thread(
             target=lambda: thread_function_for_get_download_url(title, URL, mutable)))
         threads[-1].start()
@@ -91,13 +121,11 @@ def get_download_url(title: str):
 
 
 
-
 def store_latest_circular():
-    ptm = ["https://www.bpsdoha.net/circular/category/40"]
-    general = ["https://www.bpsdoha.net/circular/category/38",
-               "https://www.bpsdoha.net/circular/category/38?start=20"]
-    exam = ["https://www.bpsdoha.net/circular/category/35",
-            "https://www.bpsdoha.net/circular/category/35?start=20"]
+    ptm = cat_dict["ptm"]
+    general = cat_dict["general"]
+    exam = cat_dict["exam"]
+
     while True:
         data = {
             "ptm": get_latest_circular(ptm, "all"),
