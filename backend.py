@@ -7,26 +7,26 @@ from nltk.tokenize import word_tokenize
 import pypdfium2 as pdfium
 
 cat_dict = {
-    "ptm": [
+    "ptm": (
         "https://www.bpsdoha.net/circular/category/40", # PTM (Page 1)
         "https://www.bpsdoha.net/circular/category/40?start=20" # PTM (Page 2)
-        ],
+        ),
 
-    "general": [
+    "general": (
         "https://www.bpsdoha.net/circular/category/38",  # General (Page 1)
         "https://www.bpsdoha.net/circular/category/38?start=20",  # General (Page 2)
         "https://www.bpsdoha.net/circular/category/38?start=40"  # General (Page 3)
         "https://www.bpsdoha.net/circular/category/38?start=60"  # General (Page 4)
-    ],
+    ),
 
-    "exam": [
+    "exam": (
         "https://www.bpsdoha.net/circular/category/35",  # Exam (Page 1)
         "https://www.bpsdoha.net/circular/category/35?start=20"  # Exam (Page 2)
         "https://www.bpsdoha.net/circular/category/35?start=40"  # Exam (Page 3)
-    ]
+    )
 }
 
-pages_list = [
+pages_list = (
     "https://www.bpsdoha.net/circular/category/40",  # PTM (Page 1)
     "https://www.bpsdoha.net/circular/category/40?start=20",  # PTM (Page 2)
 
@@ -38,8 +38,7 @@ pages_list = [
     "https://www.bpsdoha.net/circular/category/35",  # Exam (Page 1)
     "https://www.bpsdoha.net/circular/category/35?start=20"  # Exam (Page 2)
     "https://www.bpsdoha.net/circular/category/35?start=40"  # Exam (Page 3)
-
-]
+)
 
 
 class Circular:
@@ -84,7 +83,7 @@ def get_circular_list(url: list, receive: str):
     return circulars if receive == "all" else titles if receive == "titles" else links if receive == "links" else None
 
 
-def get_latest_circular(category: list, receive: str):
+def get_latest_circular(category: list | tuple, receive: str):
     soup = bs4.BeautifulSoup(requests.get(category[0], headers={
                              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     title = soup.select(".pd-title")[0].text
@@ -144,7 +143,7 @@ def get_cached_latest_circular(category: str, receive: str):
     return circular if receive == "all" else circular.title if receive == "titles" else circular.link if receive == "links" else None
 
 
-def get_most_similar_sentence(keyword: str, sentences: list):
+def get_most_similar_sentence(keyword: str, sentences: list | tuple):
     ps = PorterStemmer()
     a = sentences
     # removal of stopwords
