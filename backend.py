@@ -83,7 +83,7 @@ def get_circular_list(url: list, receive: str):
     return circulars if receive == "all" else titles if receive == "titles" else links if receive == "links" else None
 
 
-def get_latest_circular(category: list | tuple, receive: str):
+def get_latest_circular(category: tuple, receive: str):
     soup = bs4.BeautifulSoup(requests.get(category[0], headers={
                              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     title = soup.select(".pd-title")[0].text
@@ -143,7 +143,7 @@ def get_cached_latest_circular(category: str, receive: str):
     return circular if receive == "all" else circular.title if receive == "titles" else circular.link if receive == "links" else None
 
 
-def get_most_similar_sentence(keyword: str, sentences: list | tuple):
+def get_most_similar_sentence(keyword: str, sentences: tuple):
     ps = PorterStemmer()
     a = sentences
     # removal of stopwords
