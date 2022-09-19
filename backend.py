@@ -74,7 +74,8 @@ def get_circular_list(url: list, receive: str):
     for unprocessed_link in unprocessed_links:
         for link in unprocessed_link:
             # Keep in mind, {link} already has a / at the start
-            links.append(f"https://bpsdoha.com{link}".strip())
+            dwn_url = (link.split(":"))[0]  # Remove the redundant part of the URL
+            links.append(f"https://bpsdoha.com{dwn_url}".strip())
     for old_title in old_titles:
         titles += old_title
 
@@ -88,8 +89,7 @@ def get_latest_circular(category: tuple, receive: str):
                              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     title = soup.select(".pd-title")[0].text
     # Keep in mind, {link} already has a / at the start
-    link = "https://bpsdoha.com" + \
-        str(soup.select(".btn.btn-success")[0]["href"]).strip()
+    link = "https://bpsdoha.com" + str(soup.select(".btn.btn-success")[0]["href"]).strip().split(":")[0]
     circulars = Circular(title.strip(), link.strip())
     return circulars if receive == "all" else title.strip() if receive == "titles" else link.strip() if receive == "links" else None
 
@@ -100,8 +100,7 @@ def thread_function_for_get_download_url(title, URL, mutable):
     titles_soup = soup.select(".pd-title")
     for title_no in range(len(titles_soup)):
         if str(titles_soup[title_no].text).strip().lower() == title.strip().lower():
-            mutable.append("https://bpsdoha.com" +
-                           str(soup.select(".btn.btn-success")[title_no]["href"]).strip())
+            mutable.append("https://bpsdoha.com" + str(soup.select(".btn.btn-success")[title_no]["href"]).strip().strip().split(":")[0])
             mutable.append(str(titles_soup[title_no].text).strip())
 
 
@@ -199,8 +198,7 @@ def get_most_similar_sentence(keyword: str, sentences: tuple):
 
 def get_png(download_url) -> str:
     windows_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
-    file_id = download_url.split('=')[1]  # Split the link by :
-    file_id = file_id.split(":")[0]
+    file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
 
     if os.path.isfile(f"./circularimages/{file_id}.png"):
