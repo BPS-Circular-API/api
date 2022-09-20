@@ -39,7 +39,7 @@ async def root():
 
 
 # Get RAW circular lists
-@app.get("/list/")
+@app.get("/list")
 async def _get_circular_list(userinput: CategoryInput):
     category = userinput.category.lower()
 
@@ -52,7 +52,11 @@ async def _get_circular_list(userinput: CategoryInput):
 
     res = get_circular_list(url)
 
-    return_list = success_response
+    return_list = {
+    "status": "success",
+    "http_status": 200,
+    "data": []
+}
     print(res)
 
     for element in res:
@@ -60,13 +64,13 @@ async def _get_circular_list(userinput: CategoryInput):
         title = element['title']
         link = element['link']
 
-        return_list['data'].append({"title": title, "url": link})
+        return_list['data'].append({"title": title, "link": link})
 
     return return_list
 
 
 # Get latest circular
-@app.get("/latest/")
+@app.get("/latest")
 async def _get_latest_circular(userinput: CategoryInput):
     category =  userinput.category.lower()
 
@@ -80,17 +84,12 @@ async def _get_latest_circular(userinput: CategoryInput):
 
     res = get_latest_circular(url)
 
-    return_list = {
-        "status": "success",
-        "http_status": 200,
-        "data": []
-    }
+    return_list = {"status": "success", "http_status": 200, 'data': res}
 
-    return_list['data'].append(res)
     return return_list
 
 
-@app.get("/search/")
+@app.get("/search")
 async def _search(userinput: TitleInput):
     title = userinput.title
 
@@ -99,7 +98,7 @@ async def _search(userinput: TitleInput):
     return get_download_url(res)
 
 
-@app.get("/cached-latest/")
+@app.get("/cached-latest")
 async def _get_cached_latest_circular(userinput: CategoryInput):
 
     if not userinput.category.lower() in ["ptm", "general", "exam"]:
@@ -109,9 +108,8 @@ async def _get_cached_latest_circular(userinput: CategoryInput):
         )
 
     res = get_cached_latest_circular(userinput.category.lower())
-    return_list = success_response
+    return_list = {"status": "success", "http_status": 200, 'data': res}
 
-    return_list['data'].append(res)
     return return_list
 
 @app.get("/getpng")
@@ -126,7 +124,10 @@ async def _get_png(urlinput: UrlInput):
 
     res = get_png(urlinput.url)
 
-    return_list = success_response
-    return_list['data'].append(res)
+    return_list = {
+        "status": "success",
+        "http_status": 200,
+        "data": res
+    }
 
     return return_list
