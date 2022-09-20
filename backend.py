@@ -26,7 +26,7 @@ cat_dict = {
     )
 }
 
-pages_list = (
+page_list = (
     "https://www.bpsdoha.net/circular/category/40",  # PTM (Page 1)
     "https://www.bpsdoha.net/circular/category/40?start=20",  # PTM (Page 2)
 
@@ -41,13 +41,6 @@ pages_list = (
 )
 
 
-class Circular:
-    def __init__(self, title, link):
-        self.title = title
-        self.link = link
-
-    def __repr__(self) -> str:
-        return f"{self.title}||{self.link}"
 
 
 def per_url(url, old_titles, unprocessed_links, roll) -> None:
@@ -61,7 +54,7 @@ def per_url(url, old_titles, unprocessed_links, roll) -> None:
         unprocessed_links[roll].append(link["href"])
 
 
-def get_circular_list(url: list, receive: str):
+def get_circular_list(url: list):
     titles, links, unprocessed_links, threads, old_titles = [], [], [], [], []
     for URL in range(len(url)):
         old_titles.append([])
@@ -74,28 +67,25 @@ def get_circular_list(url: list, receive: str):
     for unprocessed_link in unprocessed_links:
         for link in unprocessed_link:
             # Keep in mind, {link} already has a / at the start
-            dwn_url = (link.split(":"))[0]  # Remove the redundant part of the URL
-            links.append(f"https://bpsdoha.com{dwn_url}".strip())
+            links.append(f"https://bpsdoha.com{(link.split(':'))[0]}".strip())
     for old_title in old_titles:
         titles += old_title
-
-    circulars = [Circular(title.strip(), link.strip())
-                 for title, link in zip(titles, links)]
-    return circulars if receive == "all" else titles if receive == "titles" else links if receive == "links" else None
+    circulars = [{"title": title, "link": link} for title, link in zip(titles, links)]
+    return circulars
 
 
-def get_latest_circular(category: tuple, receive: str):
+def get_latest_circular(category: tuple):
     soup = bs4.BeautifulSoup(requests.get(category[0], headers={
                              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     title = soup.select(".pd-title")[0].text
     # Keep in mind, {link} already has a / at the start
     link = "https://bpsdoha.com" + str(soup.select(".btn.btn-success")[0]["href"]).strip().split(":")[0]
-    circulars = Circular(title.strip(), link.strip())
-    return circulars if receive == "all" else title.strip() if receive == "titles" else link.strip() if receive == "links" else None
+    circulars = {"title": title.strip(), "link": link.strip()}
+    return circulars
 
 
-def thread_function_for_get_download_url(title, URL, mutable):
-    soup = bs4.BeautifulSoup(requests.get(URL, headers={
+def thread_function_for_get_download_url(title, url, mutable):
+    soup = bs4.BeautifulSoup(requests.get(url, headers={
                              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     titles_soup = soup.select(".pd-title")
     for title_no in range(len(titles_soup)):
@@ -107,7 +97,7 @@ def thread_function_for_get_download_url(title, URL, mutable):
 def get_download_url(title: str):
     mutable, threads = [], []
 
-    for URL in pages_list:
+    for URL in page_list:
         threads.append(threading.Thread(
             target=lambda: thread_function_for_get_download_url(title, URL, mutable)))
         threads[-1].start()
@@ -126,20 +116,20 @@ def store_latest_circular():
 
     while True:
         data = {
-            "ptm": get_latest_circular(ptm, "all"),
-            "general": get_latest_circular(general, "all"),
-            "exam": get_latest_circular(exam, "all")
+            "ptm": get_latest_circular(ptm),
+            "general": get_latest_circular(general),
+            "exam": get_latest_circular(exam)
         }
         with open("temp.pickle", "wb") as f:
             pickle.dump(data, f)
         time.sleep(3600)
 
 
-def get_cached_latest_circular(category: str, receive: str):
+def get_cached_latest_circular(category: str):
     with open("temp.pickle", "rb") as f:
         data = pickle.load(f)
-    circular = Circular(data[category].title, data[category].link)
-    return circular if receive == "all" else circular.title if receive == "titles" else circular.link if receive == "links" else None
+    circular = {"title": data[category]['title'], "link": data[category]['link']}
+    return circular
 
 
 def get_most_similar_sentence(keyword: str, sentences: tuple):
