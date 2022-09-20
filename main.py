@@ -1,3 +1,5 @@
+import re
+
 from fastapi import FastAPI, HTTPException
 from backend import *
 from pydantic import BaseModel
@@ -24,11 +26,11 @@ success_response = {
     "data": []
 }
 
-error_response = {
-    "status": "error",
-    "http_status": 400,
-    "data": []
-}
+# error_response = {
+#     "status": "error",
+#     "http_status": 400,
+#     "error": []
+# }
 
 
 @app.get("/")
@@ -43,7 +45,10 @@ async def _get_circular_list(userinput: CategoryInput):
 
     url = ptm if category == "ptm" else general if category == "general" else exam if category == "exam" else None
     if url is None:
-        return HTTPException(status_code=400, detail="Category not found")
+        raise HTTPException(
+            status_code=400,
+            detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
+        )
 
     res = get_circular_list(url)
 
@@ -67,7 +72,10 @@ async def _get_latest_circular(userinput: CategoryInput):
 
     url = ptm if category == "ptm" else general if category == "general" else exam if category == "exam" else None
     if url is None:
-        return HTTPException(status_code=400, detail="Category not found")
+        raise HTTPException(
+            status_code=400,
+            detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
+        )
 
 
     res = get_latest_circular(url)
@@ -93,6 +101,13 @@ async def _search(userinput: TitleInput):
 
 @app.get("/cached-latest/")
 async def _get_cached_latest_circular(userinput: CategoryInput):
+
+    if not userinput.category.lower() in ["ptm", "general", "exam"]:
+        raise HTTPException(
+            status_code=400,
+            detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
+        )
+
     res = get_cached_latest_circular(userinput.category.lower())
     return_list = success_response
 
@@ -101,6 +116,14 @@ async def _get_cached_latest_circular(userinput: CategoryInput):
 
 @app.get("/getpng")
 async def _get_png(urlinput: UrlInput):
+    # TODO: Make better regex, specifically for BPS circulars
+    url_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$"
+    if not re.match(url_regex, urlinput.url):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid URL"
+        )
+
     res = get_png(urlinput.url)
 
     return_list = success_response
