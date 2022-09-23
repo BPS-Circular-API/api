@@ -112,11 +112,11 @@ async def _get_cached_latest_circular(userinput: CategoryInput):
 
     return return_list
 
+
 @app.get("/getpng")
 async def _get_png(urlinput: UrlInput):
-    # TODO: Make better regex, specifically for BPS circulars
-    url_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(\/.*)?$"
-    if not re.match(url_regex, urlinput.url):
+    bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.com\/circular\/category\/[0-9]+.*\?download=[0-9]+"
+    if not re.match(bps_circular_regex, urlinput.url):
         raise HTTPException(
             status_code=400,
             detail=f"Invalid URL"

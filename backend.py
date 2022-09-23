@@ -54,7 +54,7 @@ def per_url(url, old_titles, unprocessed_links, roll) -> None:
         unprocessed_links[roll].append(link["href"])
 
 
-def get_circular_list(url: list):
+def get_circular_list(url: tuple):
     titles, links, unprocessed_links, threads, old_titles = [], [], [], [], []
     for URL in range(len(url)):
         old_titles.append([])
