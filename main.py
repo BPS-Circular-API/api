@@ -58,10 +58,8 @@ async def _get_circular_list(userinput: CategoryInput):
     "http_status": 200,
     "data": []
 }
-    print(res)
 
     for element in res:
-        print(element)
         title = element['title']
         link = element['link']
 
@@ -93,19 +91,14 @@ async def _get_latest_circular(userinput: CategoryInput):
 @app.get("/search")
 async def _search(userinput: TitleInput):
     title = userinput.title
-    print(title)
-    urls = [
-        "https://www.bpsdoha.net/circular/category/40", "https://www.bpsdoha.net/circular/category/38",
-        "https://www.bpsdoha.net/circular/category/38?start=20", "https://www.bpsdoha.net/circular/category/35",
-        "https://www.bpsdoha.net/circular/category/35?start=20"
-    ]
 
-    all_titles = get_circular_list(urls, "titles")
+    all_titles = get_circular_list(page_list)
     corpus = SearchCorpus()
     for t in all_titles:
         corpus.add_(t)
     res = corpus.search(title, prnt=True)  # turn off after debugging
-    return get_download_url(res)
+    print(res)
+    return get_download_url(res[0])
 
 
 @app.get("/cached-latest")
@@ -125,6 +118,7 @@ async def _get_cached_latest_circular(userinput: CategoryInput):
 
 @app.get("/getpng")
 async def _get_png(urlinput: UrlInput):
+    # TODO: replace bpsdoha.net with bpsdoha.com
     bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.com\/circular\/category\/[0-9]+.*\?download=[0-9]+"
     if not re.match(bps_circular_regex, urlinput.url):
         raise HTTPException(
