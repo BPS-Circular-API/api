@@ -1,21 +1,46 @@
-import bs4
-import nltk
-import requests
-import threading
-import pickle
-import time
+import os
+
+import bs4, requests, threading, pickle, time
 from nltk.stem import PorterStemmer
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+import pypdfium2 as pdfium
+
+cat_dict = {
+    "ptm": (
+        "https://www.bpsdoha.net/circular/category/40", # PTM (Page 1)
+        "https://www.bpsdoha.net/circular/category/40?start=20" # PTM (Page 2)
+        ),
+
+    "general": (
+        "https://www.bpsdoha.net/circular/category/38",  # General (Page 1)
+        "https://www.bpsdoha.net/circular/category/38?start=20",  # General (Page 2)
+        "https://www.bpsdoha.net/circular/category/38?start=40"  # General (Page 3)
+        "https://www.bpsdoha.net/circular/category/38?start=60"  # General (Page 4)
+    ),
+
+    "exam": (
+        "https://www.bpsdoha.net/circular/category/35",  # Exam (Page 1)
+        "https://www.bpsdoha.net/circular/category/35?start=20"  # Exam (Page 2)
+        "https://www.bpsdoha.net/circular/category/35?start=40"  # Exam (Page 3)
+    )
+}
+
+page_list = (
+    "https://www.bpsdoha.net/circular/category/40",  # PTM (Page 1)
+    "https://www.bpsdoha.net/circular/category/40?start=20",  # PTM (Page 2)
+
+    "https://www.bpsdoha.net/circular/category/38",  # General (Page 1)
+    "https://www.bpsdoha.net/circular/category/38?start=20",  # General (Page 2)
+    "https://www.bpsdoha.net/circular/category/38?start=40"  # General (Page 3)
+    "https://www.bpsdoha.net/circular/category/38?start=60"  # General (Page 4)
+
+    "https://www.bpsdoha.net/circular/category/35",  # Exam (Page 1)
+    "https://www.bpsdoha.net/circular/category/35?start=20"  # Exam (Page 2)
+    "https://www.bpsdoha.net/circular/category/35?start=40"  # Exam (Page 3)
+)
 
 
-class Circular:
-    def __init__(self, title, link):
-        self.title = title
-        self.link = link
-
-    def __repr__(self) -> str:
-        return f"{self.title}||{self.link}"
 
 
 def per_url(url, old_titles, unprocessed_links, roll) -> None:
@@ -29,7 +54,7 @@ def per_url(url, old_titles, unprocessed_links, roll) -> None:
         unprocessed_links[roll].append(link["href"])
 
 
-def get_circular_list(url: list, receive: str):
+def get_circular_list(url: tuple):
     titles, links, unprocessed_links, threads, old_titles = [], [], [], [], []
     for URL in range(len(url)):
         old_titles.append([])
@@ -42,46 +67,37 @@ def get_circular_list(url: list, receive: str):
     for unprocessed_link in unprocessed_links:
         for link in unprocessed_link:
             # Keep in mind, {link} already has a / at the start
-            links.append(f"https://bpsdoha.com{link}".strip())
+            links.append(f"https://bpsdoha.com{(link.split(':'))[0]}".strip())
     for old_title in old_titles:
         titles += old_title
-
-    circulars = [Circular(title.strip(), link.strip())
-                 for title, link in zip(titles, links)]
-    return circulars if receive == "all" else titles if receive == "titles" else links if receive == "links" else None
+    circulars = [{"title": title, "link": link} for title, link in zip(titles, links)]
+    return circulars
 
 
-def get_latest_circular(category: list, receive: str):
+def get_latest_circular(category: tuple):
     soup = bs4.BeautifulSoup(requests.get(category[0], headers={
                              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     title = soup.select(".pd-title")[0].text
     # Keep in mind, {link} already has a / at the start
-    link = "https://bpsdoha.com" + \
-        str(soup.select(".btn.btn-success")[0]["href"]).strip()
-    circulars = Circular(title.strip(), link.strip())
-    return circulars if receive == "all" else title.strip() if receive == "titles" else link.strip() if receive == "links" else None
+    link = "https://bpsdoha.com" + str(soup.select(".btn.btn-success")[0]["href"]).strip().split(":")[0]
+    circulars = {"title": title.strip(), "link": link.strip()}
+    return circulars
 
 
-def thread_function_for_get_download_url(title, URL, mutable):
-    soup = bs4.BeautifulSoup(requests.get(URL, headers={
+def thread_function_for_get_download_url(title, url, mutable):
+    soup = bs4.BeautifulSoup(requests.get(url, headers={
                              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
     titles_soup = soup.select(".pd-title")
     for title_no in range(len(titles_soup)):
         if str(titles_soup[title_no].text).strip().lower() == title.strip().lower():
-            mutable.append("https://bpsdoha.com" +
-                           str(soup.select(".btn.btn-success")[title_no]["href"]).strip())
+            mutable.append("https://bpsdoha.com" + str(soup.select(".btn.btn-success")[title_no]["href"]).strip().strip().split(":")[0])
             mutable.append(str(titles_soup[title_no].text).strip())
 
 
 def get_download_url(title: str):
-    urls = [
-        "https://www.bpsdoha.net/circular/category/40", "https://www.bpsdoha.net/circular/category/38",
-        "https://www.bpsdoha.net/circular/category/38?start=20", "https://www.bpsdoha.net/circular/category/35",
-        "https://www.bpsdoha.net/circular/category/35?start=20"
-    ]
     mutable, threads = [], []
 
-    for URL in urls:
+    for URL in page_list:
         threads.append(threading.Thread(
             target=lambda: thread_function_for_get_download_url(title, URL, mutable)))
         threads[-1].start()
@@ -92,31 +108,31 @@ def get_download_url(title: str):
     return None
 
 
+
 def store_latest_circular():
-    ptm = ["https://www.bpsdoha.net/circular/category/40"]
-    general = ["https://www.bpsdoha.net/circular/category/38",
-               "https://www.bpsdoha.net/circular/category/38?start=20"]
-    exam = ["https://www.bpsdoha.net/circular/category/35",
-            "https://www.bpsdoha.net/circular/category/35?start=20"]
+    ptm = cat_dict["ptm"]
+    general = cat_dict["general"]
+    exam = cat_dict["exam"]
+
     while True:
         data = {
-            "ptm": get_latest_circular(ptm, "all"),
-            "general": get_latest_circular(general, "all"),
-            "exam": get_latest_circular(exam, "all")
+            "ptm": get_latest_circular(ptm),
+            "general": get_latest_circular(general),
+            "exam": get_latest_circular(exam)
         }
         with open("temp.pickle", "wb") as f:
             pickle.dump(data, f)
         time.sleep(3600)
 
 
-def get_cached_latest_circular(category: str, receive: str):
+def get_cached_latest_circular(category: str):
     with open("temp.pickle", "rb") as f:
         data = pickle.load(f)
-    circular = Circular(data[category].title, data[category].link)
-    return circular if receive == "all" else circular.title if receive == "titles" else circular.link if receive == "links" else None
+    circular = {"title": data[category]['title'], "link": data[category]['link']}
+    return circular
 
 
-def get_most_similar_sentence(keyword: str, sentences: list):
+def get_most_similar_sentence(keyword: str, sentences: tuple):
     ps = PorterStemmer()
     a = sentences
     # removal of stopwords
@@ -170,8 +186,38 @@ def get_most_similar_sentence(keyword: str, sentences: list):
             return a[i]
 
 
-# this is a daemon thread, daemon process get autoterminated when the program ends, so dw bout the while loop
-# Also these two lines of code MUST be at the end of the program! I think you should add it to main.py?
+def get_png(download_url) -> str:
+    windows_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
+    file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
+
+
+    if os.path.isfile(f"./circularimages/{file_id}.png"):
+        return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
+
+    pdf_file = requests.get(download_url, headers=windows_headers)
+
+
+    with open(f"./{file_id}.pdf", "wb") as f:
+        f.write(pdf_file.content)
+
+    pdf = pdfium.PdfDocument(f"./{file_id}.pdf")
+    page = pdf[0]
+    pil_image = page.render_topil(
+        scale=2,
+        rotation=0,
+        crop=(0, 0, 0, 0),
+        colour=(255, 255, 255, 255),
+        annotations=True,
+        greyscale=False,
+        optimise_mode=pdfium.OptimiseMode.NONE,
+    )
+    pil_image.save(f"./circularimages/{file_id}.png")
+    os.remove(f"./{file_id}.pdf")
+
+    return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
+
+
+# this is a daemon thread, daemon process get auto-terminated when the program ends, so don't worry about the while loop
 temp = threading.Thread(target=store_latest_circular, daemon=True)
-print("starting thread")
+print("Starting latest circular thread")
 temp.start()
