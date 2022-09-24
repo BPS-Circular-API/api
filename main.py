@@ -95,10 +95,20 @@ async def _search(userinput: TitleInput):
     all_titles = get_circular_list(page_list)
     corpus = SearchCorpus()
     for t in all_titles:
-        corpus.add_(t)
+        corpus.add_(t['title'])
     res = corpus.search(title, prnt=True)  # turn off after debugging
-    print(res)
-    return get_download_url(res[0])
+    if res is None:
+        response_dict = {"status": "success", "http_status": 200, "data": None}
+        return response_dict
+
+    res = get_download_url(res)
+    response_dict = {
+        "status": "success",
+        "http_status": 200,
+        "data": []
+    }
+    response_dict['data'].append({"title": res[0], "link": res[1]})
+    return response_dict
 
 
 @app.get("/cached-latest")

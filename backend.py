@@ -9,7 +9,8 @@ import pypdfium2 as pdfium
 cat_dict = {
     "ptm": (
         "https://www.bpsdoha.net/circular/category/40", # PTM (Page 1)
-        "https://www.bpsdoha.net/circular/category/40?start=20" # PTM (Page 2)
+        "https://www.bpsdoha.net/circular/category/40?start=20", # PTM (Page 2)
+        "https://www.bpsdoha.net/circular/category/40?start=40", # PTM (Page 3)
         ),
 
     "general": (
@@ -29,6 +30,7 @@ cat_dict = {
 page_list = (
     "https://www.bpsdoha.net/circular/category/40",  # PTM (Page 1)
     "https://www.bpsdoha.net/circular/category/40?start=20",  # PTM (Page 2)
+    "https://www.bpsdoha.net/circular/category/40?start=40",  # PTM (Page 3)
 
     "https://www.bpsdoha.net/circular/category/38",  # General (Page 1)
     "https://www.bpsdoha.net/circular/category/38?start=20",  # General (Page 2)
