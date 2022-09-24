@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from backend import *
+from searchAlgo import SearchCorpus
 from pydantic import BaseModel
 
 
@@ -76,8 +77,10 @@ async def _search(userinput: TitleInput):
     ]
 
     all_titles = get_circular_list(urls, "titles")
-    res = get_most_similar_sentence(title, all_titles)
-    print(res)
+    corpus = SearchCorpus()
+    for t in all_titles:
+        corpus.add_(t)
+    res = corpus.search(title, prnt=True)  # turn off after debugging
     return get_download_url(res)
 
 
