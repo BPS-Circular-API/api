@@ -2,6 +2,7 @@ import re
 
 from fastapi import FastAPI, HTTPException
 from backend import *
+from searchAlgo import SearchCorpus
 from pydantic import BaseModel
 
 ptm = cat_dict["ptm"]
@@ -92,9 +93,18 @@ async def _get_latest_circular(userinput: CategoryInput):
 @app.get("/search")
 async def _search(userinput: TitleInput):
     title = userinput.title
+    print(title)
+    urls = [
+        "https://www.bpsdoha.net/circular/category/40", "https://www.bpsdoha.net/circular/category/38",
+        "https://www.bpsdoha.net/circular/category/38?start=20", "https://www.bpsdoha.net/circular/category/35",
+        "https://www.bpsdoha.net/circular/category/35?start=20"
+    ]
 
-    all_titles = get_circular_list(page_list)
-    res = get_most_similar_sentence(title, all_titles)
+    all_titles = get_circular_list(urls, "titles")
+    corpus = SearchCorpus()
+    for t in all_titles:
+        corpus.add_(t)
+    res = corpus.search(title, prnt=True)  # turn off after debugging
     return get_download_url(res)
 
 
