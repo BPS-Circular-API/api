@@ -107,6 +107,9 @@ class SearchCorpus:
             return results[0][1].raw
         except IndexError:
             return None
+        except Exception as e:
+            print(e)
+            return None
 
     def __repr__(self) -> str:
         string = ""

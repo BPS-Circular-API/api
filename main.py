@@ -1,3 +1,4 @@
+import copy
 import re
 
 from fastapi import FastAPI, HTTPException
@@ -53,11 +54,7 @@ async def _get_circular_list(userinput: CategoryInput):
 
     res = get_circular_list(url)
 
-    return_list = {
-    "status": "success",
-    "http_status": 200,
-    "data": []
-}
+    return_list = copy.deepcopy(success_response)
 
     for element in res:
         title = element['title']
@@ -80,10 +77,10 @@ async def _get_latest_circular(userinput: CategoryInput):
             detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
         )
 
-
     res = get_latest_circular(url)
 
-    return_list = {"status": "success", "http_status": 200, 'data': res}
+    return_list = copy.deepcopy(success_response)
+    return_list['data'] = res
 
     return return_list
 
@@ -97,18 +94,18 @@ async def _search(userinput: TitleInput):
     for t in all_titles:
         corpus.add_(t['title'])
     res = corpus.search(title, prnt=True)  # turn off after debugging
+
+    return_list = copy.deepcopy(success_response)
+
     if res is None:
-        response_dict = {"status": "success", "http_status": 200, "data": None}
-        return response_dict
+        # noinspection PyTypedDict
+        return_list['data'] = None
+        return return_list
 
     res = get_download_url(res)
-    response_dict = {
-        "status": "success",
-        "http_status": 200,
-        "data": []
-    }
-    response_dict['data'].append({"title": res[0], "link": res[1]})
-    return response_dict
+
+    return_list['data'].append({"title": res[0], "link": res[1]})
+    return return_list
 
 
 @app.get("/cached-latest")
@@ -121,15 +118,15 @@ async def _get_cached_latest_circular(userinput: CategoryInput):
         )
 
     res = get_cached_latest_circular(userinput.category.lower())
-    return_list = {"status": "success", "http_status": 200, 'data': res}
-
+    return_list = copy.deepcopy(success_response)
+    return_list['data'] = res
     return return_list
 
 
 @app.get("/getpng")
 async def _get_png(urlinput: UrlInput):
-    # TODO: replace bpsdoha.net with bpsdoha.com
-    bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.com\/circular\/category\/[0-9]+.*\?download=[0-9]+"
+
+    bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)\/circular\/category\/[0-9]+.*\?download=[0-9]+"
     if not re.match(bps_circular_regex, urlinput.url):
         raise HTTPException(
             status_code=400,
@@ -138,10 +135,8 @@ async def _get_png(urlinput: UrlInput):
 
     res = get_png(urlinput.url)
 
-    return_list = {
-        "status": "success",
-        "http_status": 200,
-        "data": res
-    }
+    return_list = copy.deepcopy(success_response)
+    # noinspection PyTypedDict
+    return_list['data'] = res
 
     return return_list
