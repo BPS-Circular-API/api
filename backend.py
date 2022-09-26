@@ -1,9 +1,4 @@
-import os
-
-import bs4, requests, threading, pickle, time
-from nltk.stem import PorterStemmer
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
+import bs4, requests, threading, pickle, time, os
 import pypdfium2 as pdfium
 
 cat_dict = {
@@ -133,59 +128,6 @@ def get_cached_latest_circular(category: str):
     circular = {"title": data[category]['title'], "link": data[category]['link']}
     return circular
 
-
-def get_most_similar_sentence(keyword: str, sentences: tuple):
-    ps = PorterStemmer()
-    a = sentences
-    # removal of stopwords
-    stop_words = list(stopwords.words('english'))
-    # removal of punctuation signs
-    punc = '''!()-[]{};:'"\, <>./?@#$%^&*_~'''
-    s = [(word_tokenize(a[i])) for i in range(len(a))]
-    outer_1 = []
-    for i in range(len(s)):
-        inner_1 = []
-        for j in range(len(s[i])):
-            if s[i][j] not in (punc or stop_words):
-                s[i][j] = ps.stem(s[i][j])
-                if s[i][j] not in stop_words:
-                    inner_1.append(s[i][j].lower())
-        outer_1.append(set(inner_1))
-    rvector = outer_1[0]
-    for i in range(1, len(s)):
-        rvector = rvector.union(outer_1[i])
-    outer = []
-    for i in range(len(outer_1)):
-        inner = []
-        for w in rvector:
-            if w in outer_1[i]:
-                inner.append(1)
-            else:
-                inner.append(0)
-        outer.append(inner)
-    check = (word_tokenize(keyword))
-    check = [ps.stem(check[i]).lower() for i in range(len(check))]
-    check1 = []
-    for w in rvector:
-        if w in check:
-            check1.append(1)  # create a vector
-        else:
-            check1.append(0)
-    ds = []
-    for j in range(len(outer)):
-        similarity_index = 0
-        c = 0
-        if check1 == outer[j]:
-            ds.append(0)
-        else:
-            for i in range(len(rvector)):
-                c += check1[i]*outer[j][i]
-            similarity_index += c
-            ds.append(similarity_index)
-    maximum = max(ds)
-    for i in range(len(ds)):
-        if ds[i] == maximum:
-            return a[i]
 
 
 def get_png(download_url) -> str:
