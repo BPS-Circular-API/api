@@ -6,12 +6,12 @@ from backend import *
 from searchAlgo import SearchCorpus
 from pydantic import BaseModel
 
-ptm = cat_dict["ptm"]
-general = cat_dict["general"]
-exam = cat_dict["exam"]
+ptm = page_generator('ptm')
+general = page_generator('general')
+exam = page_generator('exam')
 
 class CategoryInput(BaseModel):
-    category: str
+    category: str or int
 
 class TitleInput(BaseModel):
     title: str
@@ -37,15 +37,17 @@ success_response = {
 
 @app.get("/")
 async def root():
-    return {"message": "Welcome to the BPS Circular API. Note that this is not an official API. Documentation can be found at https://bpsapi.rajtech.me/docs"}
+    return_list = copy.deepcopy(success_response)
+    # noinspection PyTypedDict
+    return_list["message"] = return_list['data'] = "Welcome to the API. Please refer to the documentation at https://bpsapi.rajtech.me/docs for more information. "
+    return return_list
 
 
 # Get RAW circular lists
 @app.get("/list")
 async def _get_circular_list(userinput: CategoryInput):
     category = userinput.category.lower()
-
-    url = ptm if category == "ptm" else general if category == "general" else exam if category == "exam" else None
+    url = page_generator(category)
     if url is None:
         raise HTTPException(
             status_code=400,
@@ -62,6 +64,9 @@ async def _get_circular_list(userinput: CategoryInput):
 
         return_list['data'].append({"title": title, "link": link})
 
+    if len(return_list['data']) == 0:
+        return_list['message'] = "There are no circulars in this category."
+
     return return_list
 
 
@@ -70,17 +75,21 @@ async def _get_circular_list(userinput: CategoryInput):
 async def _get_latest_circular(userinput: CategoryInput):
     category =  userinput.category.lower()
 
-    url = ptm if category == "ptm" else general if category == "general" else exam if category == "exam" else None
+    url = page_generator(category)
     if url is None:
         raise HTTPException(
             status_code=400,
             detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
         )
 
-    res = get_latest_circular(url)
-
     return_list = copy.deepcopy(success_response)
-    return_list['data'] = res
+
+    try:
+        res = get_latest_circular(url)
+        return_list['data'] = res
+    except Exception as e:
+        return_list['message'] = "There are no circulars in this category."
+        print(e)
 
     return return_list
 
@@ -103,21 +112,20 @@ async def _search(userinput: TitleInput):
         return return_list
 
     res = get_download_url(res)
-
-    return_list['data'].append({"title": res[0], "link": res[1]})
+    # noinspection PyTypedDict
+    return_list['data'] = {"title": res[0], "link": res[1]}
     return return_list
 
 
 @app.get("/cached-latest")
 async def _get_cached_latest_circular(userinput: CategoryInput):
-
-    if not userinput.category.lower() in ["ptm", "general", "exam"]:
+    if type(userinput) != str:
         raise HTTPException(
             status_code=400,
-            detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
+            detail=f'Invalid category. Valid categories for cached-latest are "ptm", "general" and "exam".'
         )
-
     res = get_cached_latest_circular(userinput.category.lower())
+
     return_list = copy.deepcopy(success_response)
     return_list['data'] = res
     return return_list
