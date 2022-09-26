@@ -3,8 +3,14 @@ import pypdfium2 as pdfium
 
 default_pages = 5
 
-def page_generator(category: str or int, pages: int = default_pages) -> tuple:
+def page_generator(category: str or int, pages: int = default_pages) -> tuple or None:
     preset_cats = {"general": 38, "ptm": 40, "exam": 35}
+    # check if category is a number
+    if category.isnumeric():
+        category = int(category)
+        if category < 1:
+            return None
+
     if type(category) == str:
         category = preset_cats[category]
 
