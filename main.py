@@ -119,11 +119,12 @@ async def _search(userinput: TitleInput):
 
 @app.get("/cached-latest")
 async def _get_cached_latest_circular(userinput: CategoryInput):
-    # if type(userinput) != str: # todo improve this check
-    #     raise HTTPException(
-    #         status_code=400,
-    #         detail=f'Invalid category. Valid categories for cached-latest are "ptm", "general" and "exam".'
-    #     )
+    if not userinput.category.lower() in ['ptm', 'general', 'exam']:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid category. Valid categories for /carched-latest are 'ptm', 'general' and 'exam'."
+        )
+
     res = get_cached_latest_circular(userinput.category.lower())
 
     return_list = copy.deepcopy(success_response)
