@@ -1,23 +1,9 @@
-import copy
-import re
-
 from fastapi import FastAPI, HTTPException
 from backend import *
 from searchAlgo import SearchCorpus
-from pydantic import BaseModel
+import copy, re
 
-ptm = page_generator('ptm')
-general = page_generator('general')
-exam = page_generator('exam')
 
-class CategoryInput(BaseModel):
-    category: str or int
-
-class TitleInput(BaseModel):
-    title: str
-
-class UrlInput(BaseModel):
-    url: str
 
 
 app = FastAPI()

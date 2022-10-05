@@ -1,5 +1,20 @@
 import bs4, requests, threading, pickle, time, os
 import pypdfium2 as pdfium
+from pydantic import BaseModel
+from logging.config import dictConfig
+
+
+class CategoryInput(BaseModel):
+    category: str or int
+
+
+class TitleInput(BaseModel):
+    title: str
+
+
+class UrlInput(BaseModel):
+    url: str
+
 
 default_pages = 5
 
