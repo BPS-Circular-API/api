@@ -16,6 +16,36 @@ class UrlInput(BaseModel):
     url: str
 
 
+# Initializing the Logger
+class LogConfig(BaseModel):
+    """Logging configuration to be set for the server"""
+
+    LOGGER_NAME: str = "bps-circular-api"
+    LOG_FORMAT: str = "%(levelprefix)s %(message)s"
+    LOG_LEVEL: str = "INFO"
+
+
+    # Logging config
+    version = 1
+    disable_existing_loggers = False
+    formatters = {
+        "default": {
+            "()": "uvicorn.logging.DefaultFormatter",
+            "fmt": LOG_FORMAT,
+            "datefmt": "%Y-%m-%d %H:%M:%S",
+        },
+    }
+    handlers = {
+        "default": {
+            "formatter": "default",
+            "class": "logging.StreamHandler",
+            "stream": "ext://sys.stderr",
+        },
+    }
+    loggers = {
+        "bps-circular-api": {"handlers": ["default"], "level": LOG_LEVEL},
+    }
+
 default_pages = 5
 
 def page_generator(category: str or int, pages: int = default_pages) -> tuple or None:
