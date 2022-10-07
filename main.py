@@ -31,9 +31,8 @@ async def root():
 
 # Get RAW circular lists
 @app.get("/list")
-async def _get_circular_list(userinput: CategoryInput):
-    category = userinput.category.lower()
-    url = page_generator(category)
+async def _get_circular_list(category: str or int):
+    url = page_generator(category.lower())
     if url is None:
         raise HTTPException(
             status_code=400,
@@ -58,10 +57,8 @@ async def _get_circular_list(userinput: CategoryInput):
 
 # Get latest circular
 @app.get("/latest")
-async def _get_latest_circular(userinput: CategoryInput):
-    category =  userinput.category.lower()
-
-    url = page_generator(category)
+async def _get_latest_circular(category: str or int):
+    url = page_generator(category.lower())
     if url is None:
         raise HTTPException(
             status_code=400,
@@ -81,8 +78,7 @@ async def _get_latest_circular(userinput: CategoryInput):
 
 
 @app.get("/search")
-async def _search(userinput: TitleInput):
-    title = userinput.title
+async def _search(title: str):
 
     all_titles = get_circular_list(page_list)
     corpus = SearchCorpus()
@@ -104,14 +100,14 @@ async def _search(userinput: TitleInput):
 
 
 @app.get("/cached-latest")
-async def _get_cached_latest_circular(userinput: CategoryInput):
-    if not userinput.category.lower() in ['ptm', 'general', 'exam']:
+async def _get_cached_latest_circular(category: str or int):
+    if not category.lower() in ['ptm', 'general', 'exam']:
         raise HTTPException(
             status_code=400,
             detail=f"Invalid category. Valid categories for /carched-latest are 'ptm', 'general' and 'exam'."
         )
 
-    res = get_cached_latest_circular(userinput.category.lower())
+    res = get_cached_latest_circular(category.lower())
 
     return_list = copy.deepcopy(success_response)
     return_list['data'] = res
@@ -119,16 +115,16 @@ async def _get_cached_latest_circular(userinput: CategoryInput):
 
 
 @app.get("/getpng")
-async def _get_png(urlinput: UrlInput):
+async def _get_png(url):
 
     bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)\/circular\/category\/[0-9]+.*\?download=[0-9]+"
-    if not re.match(bps_circular_regex, urlinput.url):
+    if not re.match(bps_circular_regex, url):
         raise HTTPException(
             status_code=400,
             detail=f"Invalid URL"
         )
 
-    res = get_png(urlinput.url)
+    res = get_png(url)
 
     return_list = copy.deepcopy(success_response)
     # noinspection PyTypedDict

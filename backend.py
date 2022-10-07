@@ -4,17 +4,6 @@ from pydantic import BaseModel
 from logging.config import dictConfig
 
 
-class CategoryInput(BaseModel):
-    category: str or int
-
-
-class TitleInput(BaseModel):
-    title: str
-
-
-class UrlInput(BaseModel):
-    url: str
-
 
 # Initializing the Logger
 class LogConfig(BaseModel):
@@ -69,15 +58,11 @@ except Exception as err:
     log.critical("Error reading config.ini. Error: " + str(err))
     auto_page_increment = True
     default_pages = -1
+    log_level = "INFO"
 
 # set log level
 log.setLevel(log_level.upper() if log_level.upper() in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] else "INFO")
-log.debug(f"Log level set to {log_level.upper() if log_level.upper() in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] else 'INFO'}")
-
-
-
-
-
+log.debug(f"Log level set to {log.level}")
 
 
 
