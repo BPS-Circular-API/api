@@ -82,8 +82,8 @@ def increment_page_number():
     general = page_generator('general')
     exam = page_generator('exam')
 
-
     page_list = tuple([ptm, general, exam])
+
 
 
 def page_generator(category: str or int, pages: int = -1) -> tuple or None:
@@ -106,7 +106,6 @@ def page_generator(category: str or int, pages: int = -1) -> tuple or None:
     log.debug(urls)
 
     return tuple(urls)
-
 
 
 
@@ -212,12 +211,10 @@ def get_png(download_url) -> str:
     windows_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
-
     if os.path.isfile(f"./circularimages/{file_id}.png"):
         return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
 
     pdf_file = requests.get(download_url, headers=windows_headers)
-
 
     with open(f"./{file_id}.pdf", "wb") as f:
         f.write(pdf_file.content)
@@ -233,6 +230,10 @@ def get_png(download_url) -> str:
         greyscale=False,
         optimise_mode=pdfium.OptimiseMode.NONE,
     )
+
+    if not os.path.isdir("./circularimages"):   # Create the directory if it doesn't exist
+        os.mkdir("./circularimages")
+
     pil_image.save(f"./circularimages/{file_id}.png")
     os.remove(f"./{file_id}.pdf")
 
