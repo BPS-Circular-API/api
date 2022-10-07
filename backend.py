@@ -1,4 +1,4 @@
-import bs4, requests, threading, pickle, time, os
+import bs4, requests, threading, pickle, time, os, logging,  configparser
 import pypdfium2 as pdfium
 from pydantic import BaseModel
 from logging.config import dictConfig
@@ -46,7 +46,34 @@ class LogConfig(BaseModel):
         "bps-circular-api": {"handlers": ["default"], "level": LOG_LEVEL},
     }
 
-default_pages = 5
+# Initiate the logging config
+dictConfig(LogConfig().dict())
+log = logging.getLogger("bps-circular-api")
+
+
+
+# Getting config
+config = configparser.ConfigParser()
+
+try:
+   config.read('config.ini')
+except Exception as e:
+    print("Error reading the config.ini file. Error: " + str(e))
+    exit()
+
+try:
+    default_pages: int = config.getint('main', 'default_pages')
+    log_level: str = config.get('main', 'log_level')
+    auto_page_increment: bool = config.getboolean('main', 'auto_page_increment')
+except Exception as err:
+    log.critical("Error reading config.ini. Error: " + str(err))
+    auto_page_increment = True
+    default_pages = -1
+
+# set log level
+log.setLevel(log_level.upper() if log_level.upper() in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] else "INFO")
+log.debug(f"Log level set to {log_level.upper() if log_level.upper() in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] else 'INFO'}")
+
 
 def page_generator(category: str or int, pages: int = default_pages) -> tuple or None:
     preset_cats = {"general": 38, "ptm": 40, "exam": 35}
