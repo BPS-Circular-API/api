@@ -118,11 +118,11 @@ def page_generator(category: str or int, pages: int = -1) -> tuple or None:
     # generate urls incrementing by 20 but starting from 0
     for i in range(0, pages * 20, 20):
         urls.append(f"https://www.bpsdoha.net/circular/category/{category}?start={i}")
+    log.debug(urls)
 
     return tuple(urls)
 
 
-page_list = tuple([page_generator("general"), page_generator("ptm"), page_generator("exam")])
 
 
 def per_url(url, old_titles, unprocessed_links, roll) -> None:
@@ -136,7 +136,8 @@ def per_url(url, old_titles, unprocessed_links, roll) -> None:
         unprocessed_links[roll].append(link["href"])
 
 
-def get_circular_list(url: tuple):
+
+def get_circular_list(url: tuple, quiet: bool = False) -> list:
     titles, links, unprocessed_links, threads, old_titles = [], [], [], [], []
 
     for URL in range(len(url)):
@@ -153,6 +154,13 @@ def get_circular_list(url: tuple):
     for old_title in old_titles:
         titles += old_title
     circulars = [{"title": title, "link": link} for title, link in zip(titles, links)]
+    if len(circulars) == default_pages * 20:
+        if not quiet:
+            if not auto_page_increment:
+                log.error("The default number of pages is too low, and older circulars may become unreachable by the web-scraper. Please increase the number of pages in config.ini")
+            else:
+                log.info("The default number of pages is was to low in config.ini, It has been automatically increased. If you want to disable this, set auto_page_increment to False in config.ini")
+                auto_extend_page_list()
     return circulars
 
 
@@ -167,6 +175,7 @@ def get_latest_circular(category: tuple):
     return circulars
 
 
+
 def thread_function_for_get_download_url(title, url, mutable):
     soup = bs4.BeautifulSoup(requests.get(url, headers={
                              "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
@@ -175,6 +184,7 @@ def thread_function_for_get_download_url(title, url, mutable):
         if str(titles_soup[title_no].text).strip().lower() == title.strip().lower():
             mutable.append("https://bpsdoha.com" + str(soup.select(".btn.btn-success")[title_no]["href"]).strip().strip().split(":")[0])
             mutable.append(str(titles_soup[title_no].text).strip())
+
 
 
 def get_download_url(title: str) -> tuple or None:
@@ -202,6 +212,7 @@ def store_latest_circular():
         with open("temp.pickle", "wb") as f:
             pickle.dump(data, f)
         time.sleep(3600)
+
 
 
 def get_cached_latest_circular(category: str):
