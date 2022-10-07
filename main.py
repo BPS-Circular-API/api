@@ -2,11 +2,17 @@ from fastapi import FastAPI, HTTPException
 from backend import *
 from searchAlgo import SearchCorpus
 import copy, re
+from starlette.responses import JSONResponse
 
 
 
 
-app = FastAPI()
+app = FastAPI(
+    title="BPS Circular API",
+    description="An API that can work with the circulars of Birla Public School",
+    version="1.0.0",
+    # docs_url="../docs",
+)
 
 success_response = {
     "status": "success",
@@ -14,18 +20,24 @@ success_response = {
     "data": []
 }
 
-# error_response = {
-#     "status": "error",
-#     "http_status": 400,
-#     "error": []
-# }
+error_response = {
+    "status": "error",
+    "http_status": 400,
+    "error": ""
+}
+
+@app.exception_handler(500)
+async def error_handler(err):
+    error_content = copy.deepcopy(error_response)
+    error_content["error"] = str(err)
+    return JSONResponse(content=error_content, status_code=500)
 
 
 @app.get("/")
 async def root():
     return_list = copy.deepcopy(success_response)
     # noinspection PyTypedDict
-    return_list["message"] = return_list['data'] = "Welcome to the API. Please refer to the documentation at https://bpsapi.rajtech.me/docs for more information. "
+    return_list["message"] = return_list['data'] = "Welcome to the API. Please refer to the documentation at https://bpsapi.rajtech.me/docs for more information."
     return return_list
 
 

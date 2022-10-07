@@ -235,7 +235,10 @@ def get_png(download_url) -> str:
         os.mkdir("./circularimages")
 
     pil_image.save(f"./circularimages/{file_id}.png")
-    os.remove(f"./{file_id}.pdf")
+    try:
+        os.remove(f"./{file_id}.pdf")
+    except WindowsError:
+        log.error("Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
 
     return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
 
