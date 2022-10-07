@@ -241,8 +241,41 @@ def get_png(download_url) -> str:
 
 
 
+ptm = page_generator('ptm')
+general = page_generator('general')
+exam = page_generator('exam')
+page_list = tuple([ptm, general, exam])
 
-# this is a daemon thread, daemon process get auto-terminated when the program ends, so don't worry about the while loop
-temp = threading.Thread(target=store_latest_circular, daemon=True)
-print("Starting latest circular thread")
-temp.start()
+
+
+def auto_extend_page_list():
+    old_default_pages = default_pages
+    while True:
+        circulars = get_circular_list(general, quiet=True)
+        if len(circulars) == default_pages * 20:
+            increment_page_number()
+        else:
+            break
+    if old_default_pages != default_pages:
+        log.info(f"Default page number has been increased from {old_default_pages} to {default_pages}")
+
+def thread_func_for_auto_extend_page_list():
+    while True:
+        auto_extend_page_list()
+        time.sleep(60 * 60 * 24)
+
+
+if default_pages < 1:
+    auto_extend_page_list()
+    log.critical("default_pages is less than 1. Setting it to 5")
+
+
+# this is a daemon thread, daemon processes get auto-terminated when the program ends, so we don't have to worry about it
+log.info("Starting latest circular thread")
+threading.Thread(target=store_latest_circular, daemon=True).start()
+
+# loop auto_extend_page_list every 24 hours
+if auto_page_increment:
+    threading.Thread(target=thread_func_for_auto_extend_page_list, daemon=True).start()
+
+print("Started")
