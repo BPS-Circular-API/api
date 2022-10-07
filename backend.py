@@ -75,7 +75,35 @@ log.setLevel(log_level.upper() if log_level.upper() in ["DEBUG", "INFO", "WARNIN
 log.debug(f"Log level set to {log_level.upper() if log_level.upper() in ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'] else 'INFO'}")
 
 
-def page_generator(category: str or int, pages: int = default_pages) -> tuple or None:
+
+
+
+
+
+
+
+# Functions
+def increment_page_number():
+    global default_pages, ptm, general, exam, page_list
+    default_pages += 1
+
+    # change the value in the config file
+    config.set('main', 'default_pages', str(default_pages))
+    with open('config.ini', 'w') as configfile:
+        config.write(configfile)
+    log.debug("Incremented the page number to " + str(default_pages))
+
+    ptm = page_generator('ptm')
+    general = page_generator('general')
+    exam = page_generator('exam')
+
+
+    page_list = tuple([ptm, general, exam])
+
+
+def page_generator(category: str or int, pages: int = -1) -> tuple or None:
+    if pages == -1:
+        pages = default_pages
     preset_cats = {"general": 38, "ptm": 40, "exam": 35}
     # check if category is a number
     if category.isnumeric():
