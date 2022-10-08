@@ -22,7 +22,7 @@ success_response = {
 
 error_response = {
     "status": "error",
-    "http_status": 400,
+    "http_status": 500,
     "error": ""
 }
 
