@@ -38,6 +38,7 @@ class SearchCorpus:
     # function to search
     def search(self, q: str, prnt: bool = False) -> str or None:
 
+        global keyword_
         try:
             q = q.lower()
 

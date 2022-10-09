@@ -247,8 +247,13 @@ def get_png(download_url) -> str:
 ptm = page_generator('ptm')
 general = page_generator('general')
 exam = page_generator('exam')
-page_list = tuple([ptm, general, exam])
-
+print(page_generator('ptm'))
+page_list = []
+# add the items of ptm, general and exam to page_list
+page_list.extend(ptm)
+page_list.extend(general)
+page_list.extend(exam)
+print(page_list)
 
 
 def auto_extend_page_list():
