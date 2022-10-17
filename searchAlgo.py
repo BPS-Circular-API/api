@@ -51,12 +51,12 @@ class SearchCorpus:
 
             # Replace numbers with roman numerals
             list_of_roman = ["i", "ii", "iii", "iv", "v",
-                         "vi", "vii", "viii", "ix", "x", "xi", "xii"]
+                             "vi", "vii", "viii", "ix", "x", "xi", "xii"]
             for i in range(len(q.split(" "))):
                 # if the previous word is not 'pt'
-                if (q.split(" ")[i-1] == "pt") is False and (q.split(" ")[i].isdigit()) is True:
+                if (q.split(" ")[i - 1] == "pt") is False and (q.split(" ")[i].isdigit()) is True:
                     # replace other words, with their roman numeral
-                    q = q.replace(str(q.split(" ")[i]), list_of_roman[int(q.split(" ")[i])-1])
+                    q = q.replace(str(q.split(" ")[i]), list_of_roman[int(q.split(" ")[i]) - 1])
 
             self.r.extract_keywords_from_text(q)
             keyword = self.r.get_ranked_phrases_with_scores()
@@ -75,22 +75,23 @@ class SearchCorpus:
                             # if words in keyword's ranked phrases in the corpus ranked phrases
                             if keyword__ in "".join([c[1] for c in corp.ranked_phrases]):
                                 if corp in [c[1] for c in results]:
-                                    results[[c[1]for c in results].index(corp)][0] += 1
+                                    results[[c[1] for c in results].index(corp)][0] += 1
                                 else:
                                     results.append([1, corp])
 
                             if keyword__ in [c[1] for c in corp.ranked_phrases]:
                                 # WEIGHTAGE: 2
                                 if corp in [c[1] for c in results]:
-                                    results[[c[1]for c in results].index(corp)][0] += 2
+                                    results[[c[1] for c in results].index(corp)][0] += 2
                                 else:
                                     results.append([2, corp])
 
                 #     itertools.combinations(keyword_[1].split(" "), 2))])
-                for keyword___ in [" ".join(string) for string in list(itertools.combinations(keyword_[1].split(" "), 2))]:
+                for keyword___ in [" ".join(string) for string in
+                                   list(itertools.combinations(keyword_[1].split(" "), 2))]:
                     # if any of the possible pair of words in keyword's ranked phrases in the corpus ranked phrases
                     if keyword___ in [c[1] for c in corp.ranked_phrases]:
-                    # WEIGHTAGE: 2
+                        # WEIGHTAGE: 2
                         if corp in [c[1] for c in results]:
                             results[[c[1] for c in results].index(corp)][0] += 2
                         else:

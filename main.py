@@ -1,11 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from backend import *
 from searchAlgo import SearchCorpus
-import copy, re
+import copy
+import re
 from starlette.responses import JSONResponse
-
-
-
 
 app = FastAPI(
     title="BPS Circular API",
@@ -14,23 +12,20 @@ app = FastAPI(
     # docs_url="../docs",
 )
 
-success_response = {
-    "status": "success",
-    "http_status": 200,
-    "data": []
-}
-
-error_response = {
-    "status": "error",
-    "http_status": 500,
-    "error": ""
-}
 
 @app.exception_handler(500)
-async def error_handler(err):
+async def handler_500(err, e):
     error_content = copy.deepcopy(error_response)
     error_content["error"] = str(err)
     return JSONResponse(content=error_content, status_code=500)
+
+
+@app.exception_handler(404)
+async def handler_404(err, e):
+    error_content = copy.deepcopy(error_response)
+    error_content['http_status'] = 404
+    error_content["error"] = "Not Found"
+    return JSONResponse(content=error_content, status_code=404)
 
 
 @app.get("/")
@@ -84,14 +79,13 @@ async def _get_latest_circular(category: str or int):
         return_list['data'] = res
     except Exception as e:
         return_list['message'] = "There are no circulars in this category."
-        print(e)
+        log.error(e)
 
     return return_list
 
 
 @app.get("/search")
 async def _search(title: str):
-
     all_titles = get_circular_list(page_list)
     corpus = SearchCorpus()
     for t in all_titles:
@@ -128,7 +122,6 @@ async def _get_cached_latest_circular(category: str or int):
 
 @app.get("/getpng")
 async def _get_png(url):
-
     bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)\/circular\/category\/[0-9]+.*\?download=[0-9]+"
     if not re.match(bps_circular_regex, url):
         raise HTTPException(

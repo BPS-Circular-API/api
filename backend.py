@@ -1,8 +1,26 @@
-import bs4, requests, threading, pickle, time, os, logging,  configparser
-import pypdfium2 as pdfium
-from pydantic import BaseModel
 from logging.config import dictConfig
+import bs4
+import configparser
+import logging
+import os
+import pickle
+import pypdfium2 as pdfium
+import requests
+import threading
+import time
+from pydantic import BaseModel
 
+success_response = {
+    "status": "success",
+    "http_status": 200,
+    "data": []
+}
+
+error_response = {
+    "status": "error",
+    "http_status": 500,
+    "error": ""
+}
 
 
 # Initializing the Logger
@@ -12,7 +30,6 @@ class LogConfig(BaseModel):
     LOGGER_NAME: str = "bps-circular-api"
     LOG_FORMAT: str = "%(levelprefix)s %(message)s"
     LOG_LEVEL: str = "INFO"
-
 
     # Logging config
     version = 1
@@ -35,17 +52,16 @@ class LogConfig(BaseModel):
         "bps-circular-api": {"handlers": ["default"], "level": LOG_LEVEL},
     }
 
+
 # Initiate the logging config
 dictConfig(LogConfig().dict())
 log = logging.getLogger("bps-circular-api")
-
-
 
 # Getting config
 config = configparser.ConfigParser()
 
 try:
-   config.read('config.ini')
+    config.read('config.ini')
 except Exception as e:
     print("Error reading the config.ini file. Error: " + str(e))
     exit()
@@ -65,8 +81,6 @@ log.setLevel(log_level.upper() if log_level.upper() in ["DEBUG", "INFO", "WARNIN
 log.debug(f"Log level set to {log.level}")
 
 
-
-
 # Functions
 def increment_page_number():
     global default_pages, ptm, general, exam, page_list
@@ -83,7 +97,6 @@ def increment_page_number():
     exam = page_generator('exam')
 
     page_list = tuple([ptm, general, exam])
-
 
 
 def page_generator(category: str or int, pages: int = -1) -> tuple or None:
@@ -108,7 +121,6 @@ def page_generator(category: str or int, pages: int = -1) -> tuple or None:
     return tuple(urls)
 
 
-
 def per_url(url, old_titles, unprocessed_links, roll) -> None:
     soup = bs4.BeautifulSoup(requests.get(url, headers={
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"
@@ -118,7 +130,6 @@ def per_url(url, old_titles, unprocessed_links, roll) -> None:
         old_titles[roll].append(title.text)
     for link in soup.select(".btn.btn-success"):
         unprocessed_links[roll].append(link["href"])
-
 
 
 def get_circular_list(url: tuple, quiet: bool = False) -> list:
@@ -141,17 +152,19 @@ def get_circular_list(url: tuple, quiet: bool = False) -> list:
     if len(circulars) == default_pages * 20:
         if not quiet:
             if not auto_page_increment:
-                log.error("The default number of pages is too low, and older circulars may become unreachable by the web-scraper. Please increase the number of pages in config.ini")
+                log.error(
+                    "The default number of pages is too low, and older circulars may become unreachable by the web-scraper. Please increase the number of pages in config.ini")
             else:
-                log.info("The default number of pages is was to low in config.ini, It has been automatically increased. If you want to disable this, set auto_page_increment to False in config.ini")
+                log.info(
+                    "The default number of pages is was to low in config.ini, It has been automatically increased. If you want to disable this, set auto_page_increment to False in config.ini")
                 auto_extend_page_list()
     return circulars
 
 
-
 def get_latest_circular(category: tuple):
     soup = bs4.BeautifulSoup(requests.get(category[0], headers={
-                             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text,
+                             "lxml")
     title = soup.select(".pd-title")[0].text
     # Keep in mind, {link} already has a / at the start
     link = "https://bpsdoha.com" + str(soup.select(".btn.btn-success")[0]["href"]).strip().split(":")[0]
@@ -159,16 +172,16 @@ def get_latest_circular(category: tuple):
     return circulars
 
 
-
 def thread_function_for_get_download_url(title, url, mutable):
     soup = bs4.BeautifulSoup(requests.get(url, headers={
-                             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text, "lxml")
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text,
+                             "lxml")
     titles_soup = soup.select(".pd-title")
     for title_no in range(len(titles_soup)):
         if str(titles_soup[title_no].text).strip().lower() == title.strip().lower():
-            mutable.append("https://bpsdoha.com" + str(soup.select(".btn.btn-success")[title_no]["href"]).strip().strip().split(":")[0])
+            mutable.append("https://bpsdoha.com" +
+                           str(soup.select(".btn.btn-success")[title_no]["href"]).strip().strip().split(":")[0])
             mutable.append(str(titles_soup[title_no].text).strip())
-
 
 
 def get_download_url(title: str) -> tuple or None:
@@ -185,7 +198,6 @@ def get_download_url(title: str) -> tuple or None:
     return None
 
 
-
 def store_latest_circular():
     while True:
         data = {
@@ -198,7 +210,6 @@ def store_latest_circular():
         time.sleep(3600)
 
 
-
 def get_cached_latest_circular(category: str):
     with open("temp.pickle", "rb") as f:
         data = pickle.load(f)
@@ -206,9 +217,9 @@ def get_cached_latest_circular(category: str):
     return circular
 
 
-
 def get_png(download_url) -> str:
-    windows_headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
+    windows_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
     if os.path.isfile(f"./circularimages/{file_id}.png"):
@@ -231,29 +242,27 @@ def get_png(download_url) -> str:
         optimise_mode=pdfium.OptimiseMode.NONE,
     )
 
-    if not os.path.isdir("./circularimages"):   # Create the directory if it doesn't exist
+    if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
         os.mkdir("./circularimages")
 
     pil_image.save(f"./circularimages/{file_id}.png")
     try:
         os.remove(f"./{file_id}.pdf")
     except WindowsError:
-        log.error("Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
+        log.error(
+            "Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
 
     return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
-
 
 
 ptm = page_generator('ptm')
 general = page_generator('general')
 exam = page_generator('exam')
-print(page_generator('ptm'))
 page_list = []
 # add the items of ptm, general and exam to page_list
 page_list.extend(ptm)
 page_list.extend(general)
 page_list.extend(exam)
-print(page_list)
 
 
 def auto_extend_page_list():
@@ -267,6 +276,7 @@ def auto_extend_page_list():
     if old_default_pages != default_pages:
         log.info(f"Default page number has been increased from {old_default_pages} to {default_pages}")
 
+
 def thread_func_for_auto_extend_page_list():
     while True:
         auto_extend_page_list()
@@ -276,7 +286,6 @@ def thread_func_for_auto_extend_page_list():
 if default_pages < 1:
     auto_extend_page_list()
     log.critical("default_pages is less than 1. Setting it to 5")
-
 
 # this is a daemon thread, daemon processes get auto-terminated when the program ends, so we don't have to worry about it
 log.info("Starting latest circular thread")
