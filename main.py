@@ -32,7 +32,7 @@ async def handler_404(err, e):
 async def root():
     return_list = copy.deepcopy(success_response)
     # noinspection PyTypedDict
-    return_list["message"] = return_list['data'] = "Welcome to the API. Please refer to the documentation at https://bpsapi.rajtech.me/docs for more information."
+    return_list["data"] = return_list['data'] = "Welcome to the API. Please refer to the documentation at https://bpsapi.rajtech.me/docs for more information."
     return return_list
 
 
@@ -57,7 +57,7 @@ async def _get_circular_list(category: str or int):
         return_list['data'].append({"title": title, "link": link})
 
     if len(return_list['data']) == 0:
-        return_list['message'] = "There are no circulars in this category."
+        return_list['data'] = "There are no circulars in this category."
 
     return return_list
 
@@ -78,7 +78,7 @@ async def _get_latest_circular(category: str or int):
         res = get_latest_circular(url)
         return_list['data'] = res
     except Exception as e:
-        return_list['message'] = "There are no circulars in this category."
+        return_list['data'] = "There are no circulars in this category."
         log.error(e)
 
     return return_list

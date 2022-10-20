@@ -1,0 +1,7 @@
+beautifulsoup4==4.11.1
+fastapi==0.85.1
+pydantic==1.9.1
+pypdfium2==2.10.0
+rake_nltk==1.0.6
+requests==2.27.1
+starlette==0.19.1

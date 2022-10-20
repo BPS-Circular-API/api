@@ -235,7 +235,7 @@ def get_png(download_url) -> str:
     pil_image = page.render_topil(
         scale=2,
         rotation=0,
-        crop=(0, 0, 0, 0),
+        crop=(0, 0, 0, 0),  # TODO: make it crop a bit because of the borders
         colour=(255, 255, 255, 255),
         annotations=True,
         greyscale=False,
@@ -249,8 +249,7 @@ def get_png(download_url) -> str:
     try:
         os.remove(f"./{file_id}.pdf")
     except WindowsError:
-        log.error(
-            "Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
+        log.error("Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
 
     return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
 
