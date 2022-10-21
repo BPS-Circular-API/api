@@ -110,7 +110,7 @@ async def _get_cached_latest_circular(category: str or int):
     if not category.lower() in ['ptm', 'general', 'exam']:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid category. Valid categories for /carched-latest are 'ptm', 'general' and 'exam'."
+            detail=f"Invalid category. Valid categories for /cached-latest are 'ptm', 'general' and 'exam'."
         )
 
     res = get_cached_latest_circular(category.lower())
