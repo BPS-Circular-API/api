@@ -217,7 +217,7 @@ def get_cached_latest_circular(category: str):
     return circular
 
 
-def get_png(download_url) -> str:
+def get_png(download_url) -> str or None:
     windows_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
@@ -230,12 +230,21 @@ def get_png(download_url) -> str:
     with open(f"./{file_id}.pdf", "wb") as f:
         f.write(pdf_file.content)
 
-    pdf = pdfium.PdfDocument(f"./{file_id}.pdf")
+
+
+    try:
+        pdf = pdfium.PdfDocument(f"./{file_id}.pdf")
+    except Exception as e:
+        os.remove(f"./{file_id}.pdf")
+        return None
+
+
     page = pdf[0]
+
     pil_image = page.render_topil(
-        scale=2,
+        scale=5,
         rotation=0,
-        crop=(0, 0, 0, 0),  # TODO: make it crop a bit because of the borders
+        crop=(0, 0, 0, 0),  # Crop doesn't work for some reason
         colour=(255, 255, 255, 255),
         annotations=True,
         greyscale=False,
