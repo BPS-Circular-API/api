@@ -133,22 +133,28 @@ def per_url(url, old_titles, unprocessed_links, roll) -> None:
 
 
 def get_circular_list(url: tuple, quiet: bool = False) -> list:
-    titles, links, unprocessed_links, threads, old_titles = [], [], [], [], []
+    titles, links, ids, unprocessed_links, threads, old_titles = [], [], [], [], [], []
 
     for URL in range(len(url)):
         old_titles.append([])
         unprocessed_links.append([])
         threads.append(threading.Thread(target=lambda: per_url(url[URL], old_titles, unprocessed_links, URL)))
         threads[-1].start()
+
     for thread in threads:
         thread.join()
+
     for unprocessed_link in unprocessed_links:
         for link in unprocessed_link:
-            # Keep in mind, {link} already has a / at the start
             links.append(f"https://bpsdoha.com{(link.split(':'))[0]}".strip())
+            id_ = link.split('=')[1].split(":")[0]
+            ids.append(id_)
+
     for old_title in old_titles:
         titles += old_title
-    circulars = [{"title": title, "link": link} for title, link in zip(titles, links)]
+
+    circulars = [{"title": title, "id": id_, "link": link} for title, link, id_ in zip(titles, links, ids)]
+
     if len(circulars) == default_pages * 20:
         if not quiet:
             if not auto_page_increment:
@@ -158,10 +164,11 @@ def get_circular_list(url: tuple, quiet: bool = False) -> list:
                 log.info(
                     "The default number of pages is was to low in config.ini, It has been automatically increased. If you want to disable this, set auto_page_increment to False in config.ini")
                 auto_extend_page_list()
+
     return circulars
 
 
-def get_latest_circular(category: tuple):
+def get_latest_circular(category: tuple) -> dict[str, str]:
     soup = bs4.BeautifulSoup(requests.get(category[0], headers={
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text,
                              "lxml")

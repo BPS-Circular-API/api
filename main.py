@@ -52,9 +52,10 @@ async def _get_circular_list(category: str or int):
 
     for element in res:
         title = element['title']
+        id_ = element['id']
         link = element['link']
 
-        return_list['data'].append({"title": title, "link": link})
+        return_list['data'].append({"title": title, "link": link, "id": id_})
 
     if len(return_list['data']) == 0:
         return_list['data'] = "There are no circulars in this category."
