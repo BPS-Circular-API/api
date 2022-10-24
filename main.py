@@ -70,7 +70,7 @@ async def _get_latest_circular(category: str or int):
     if url is None:
         raise HTTPException(
             status_code=400,
-            detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
+            detail=f'Invalid category.'
         )
 
     return_list = copy.deepcopy(success_response)
@@ -86,7 +86,13 @@ async def _get_latest_circular(category: str or int):
 
 
 @app.get("/search")
-async def _search(title: str):
+async def _search(title: str or int):
+    # check if it is a circular id or title
+    if title.isdigit() and len(title) == 4:
+        return_list = copy.deepcopy(success_response)
+        return_list['data'] = get_from_id(title)
+        return return_list
+
     all_titles = get_circular_list(page_list)
     corpus = SearchCorpus()
     for t in all_titles:
@@ -100,9 +106,11 @@ async def _search(title: str):
         return_list['data'] = None
         return return_list
 
+    log.debug(res)
+
     res = get_download_url(res)
     # noinspection PyTypedDict
-    return_list['data'] = {"title": res[0], "link": res[1]}
+    return_list['data'] = {"title": res[0], "link": res[1], "id": res[2]}
     return return_list
 
 

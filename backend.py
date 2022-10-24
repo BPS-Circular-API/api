@@ -100,7 +100,7 @@ def increment_page_number():
 
 
 def page_generator(category: str or int, pages: int = -1) -> tuple or None:
-    if pages == -1:
+    if pages == -1:  # if the number of pages to be generated is not specified, use the default number of pages
         pages = default_pages
     preset_cats = {"general": 38, "ptm": 40, "exam": 35}
     # check if category is a number
@@ -175,7 +175,8 @@ def get_latest_circular(category: tuple) -> dict[str, str]:
     title = soup.select(".pd-title")[0].text
     # Keep in mind, {link} already has a / at the start
     link = "https://bpsdoha.com" + str(soup.select(".btn.btn-success")[0]["href"]).strip().split(":")[0]
-    circulars = {"title": title.strip(), "link": link.strip()}
+    id_ = link.split("=")[1].split(":")[0]
+    circulars = {"title": title.strip(), "link": link.strip(), "id": id_.strip()}
     return circulars
 
 
@@ -200,8 +201,22 @@ def get_download_url(title: str) -> tuple or None:
         threads[-1].start()
     for thread in threads:
         thread.join()
+    id_ = mutable[0].split("=")[1].split(":")[0]
     if mutable:
-        return mutable[1], mutable[0]
+        return mutable[1], mutable[0], id_
+    return None
+
+
+def get_circular_from_id(id_: int or str):
+    mutable, threads = [], []
+    urls = page_list
+    for URL in urls:
+        threads.append(threading.Thread(target=lambda: thread_function_for_get_download_url(title, URL, mutable)))
+        threads[-1].start()
+    for thread in threads:
+        thread.join()
+    if mutable:
+        return mutable[0]
     return None
 
 
@@ -220,7 +235,7 @@ def store_latest_circular():
 def get_cached_latest_circular(category: str):
     with open("temp.pickle", "rb") as f:
         data = pickle.load(f)
-    circular = {"title": data[category]['title'], "link": data[category]['link']}
+    circular = {"title": data[category]['title'], "link": data[category]['link'], "id": data[category]['id']}
     return circular
 
 
@@ -237,14 +252,11 @@ def get_png(download_url) -> str or None:
     with open(f"./{file_id}.pdf", "wb") as f:
         f.write(pdf_file.content)
 
-
-
     try:
         pdf = pdfium.PdfDocument(f"./{file_id}.pdf")
     except Exception as e:
         os.remove(f"./{file_id}.pdf")
         return None
-
 
     page = pdf[0]
 
@@ -265,7 +277,8 @@ def get_png(download_url) -> str or None:
     try:
         os.remove(f"./{file_id}.pdf")
     except WindowsError:
-        log.error("Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
+        log.error(
+            "Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
 
     return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
 
@@ -278,6 +291,15 @@ page_list = []
 page_list.extend(ptm)
 page_list.extend(general)
 page_list.extend(exam)
+
+
+def get_from_id(_id: int):
+    # go through all the bps circular pages and look for the id in the url
+    circular_list = get_circular_list(tuple(page_list), quiet=True)
+    for i in circular_list:
+        if i['id'] == _id:
+            return i
+    return None
 
 
 def auto_extend_page_list():
