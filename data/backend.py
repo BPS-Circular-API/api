@@ -61,7 +61,7 @@ log = logging.getLogger("bps-circular-api")
 config = configparser.ConfigParser()
 
 try:
-    config.read('config.ini')
+    config.read('./data/config.ini')
 except Exception as e:
     print("Error reading the config.ini file. Error: " + str(e))
     exit()
@@ -88,7 +88,7 @@ def increment_page_number():
 
     # change the value in the config file
     config.set('main', 'default_pages', str(default_pages))
-    with open('config.ini', 'w') as configfile:
+    with open('../config.ini', 'w') as configfile:
         config.write(configfile)
     log.debug("Incremented the page number to " + str(default_pages))
 
@@ -227,13 +227,13 @@ def store_latest_circular():
             "general": get_latest_circular(page_generator('general')),
             "exam": get_latest_circular(page_generator('exam'))
         }
-        with open("temp.pickle", "wb") as f:
+        with open("./data/temp.pickle", "wb") as f:
             pickle.dump(data, f)
         time.sleep(3600)
 
 
 def get_cached_latest_circular(category: str):
-    with open("temp.pickle", "rb") as f:
+    with open("./data/temp.pickle", "rb") as f:
         data = pickle.load(f)
     circular = {"title": data[category]['title'], "link": data[category]['link'], "id": data[category]['id']}
     return circular
@@ -270,8 +270,8 @@ def get_png(download_url) -> str or None:
         optimise_mode=pdfium.OptimiseMode.NONE,
     )
 
-    if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
-        os.mkdir("./circularimages")
+    if not os.path.isdir("../circularimages"):  # Create the directory if it doesn't exist
+        os.mkdir("../circularimages")
 
     pil_image.save(f"./circularimages/{file_id}.png")
     try:

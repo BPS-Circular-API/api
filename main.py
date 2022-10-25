@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from backend import *
-from searchAlgo import SearchCorpus
+from data.backend import *
+from data.searchAlgo import SearchCorpus
 import copy
 import re
 from starlette.responses import JSONResponse
