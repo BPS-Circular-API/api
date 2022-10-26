@@ -270,8 +270,8 @@ def get_png(download_url) -> str or None:
         optimise_mode=pdfium.OptimiseMode.NONE,
     )
 
-    if not os.path.isdir("../circularimages"):  # Create the directory if it doesn't exist
-        os.mkdir("../circularimages")
+    if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
+        os.mkdir("./circularimages")
 
     pil_image.save(f"./circularimages/{file_id}.png")
     try:
