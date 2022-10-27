@@ -3,6 +3,7 @@ from data.backend import *
 from data.searchAlgo import SearchCorpus
 import copy
 import re
+import sqlite3
 from starlette.responses import JSONResponse
 
 app = FastAPI(
@@ -47,7 +48,6 @@ async def _get_circular_list(category: str or int):
         )
 
     res = get_circular_list(url)
-
     return_list = copy.deepcopy(success_response)
 
     for element in res:
@@ -93,11 +93,31 @@ async def _search(title: str or int):
         return_list['data'] = get_from_id(title)
         return return_list
 
+    con = sqlite3.connect('data/data.db')
+    cur = con.cursor()
+    cur.execute("SELECT * FROM list_cache")
+    data = cur.fetchall()
+    log.debug("data" + str(data))
+
+    corpus = SearchCorpus()
+    for t in data:
+        corpus.add_(t[1])
+    res = corpus.search(title, prnt=False)
+
+    if res:
+        return_list = copy.deepcopy(success_response)
+        # res is the circular title, find the id from the database
+        cur.execute(f"SELECT * FROM list_cache WHERE name=\"{res}\"")
+        data = cur.fetchone()
+        return_list['data'] = {"title": data[0], "link": data[1], "id": data[2]}
+        log.debug(return_list)
+        return return_list
+
     all_titles = get_circular_list(page_list)
     corpus = SearchCorpus()
     for t in all_titles:
         corpus.add_(t['title'])
-    res = corpus.search(title, prnt=True)  # turn off after debugging
+    res = corpus.search(title, prnt=False)  # turn off after debugging
 
     return_list = copy.deepcopy(success_response)
 
@@ -111,6 +131,8 @@ async def _search(title: str or int):
     res = get_download_url(res)
     # noinspection PyTypedDict
     return_list['data'] = {"title": res[0], "link": res[1], "id": res[2]}
+    cur.execute("INSERT INTO list_cache VALUES (?, ?, ?)", (res[2], res[0], res[1]))
+    con.commit()
     return return_list
 
 

@@ -207,19 +207,6 @@ def get_download_url(title: str) -> tuple or None:
     return None
 
 
-def get_circular_from_id(id_: int or str):
-    mutable, threads = [], []
-    urls = page_list
-    for URL in urls:
-        threads.append(threading.Thread(target=lambda: thread_function_for_get_download_url(title, URL, mutable)))
-        threads[-1].start()
-    for thread in threads:
-        thread.join()
-    if mutable:
-        return mutable[0]
-    return None
-
-
 def store_latest_circular():
     while True:
         data = {
@@ -295,9 +282,18 @@ page_list.extend(exam)
 
 def get_from_id(_id: int):
     # go through all the bps circular pages and look for the id in the url
+    con = sqlite3.connect("./data/data.db")
+    cur = con.cursor()
+
+    cur.execute(f"SELECT * FROM circulars WHERE id={_id}")
+    data = cur.fetchone()
+    if data:
+        return data
+
     circular_list = get_circular_list(tuple(page_list), quiet=True)
     for i in circular_list:
         if i['id'] == _id:
+            cur.execute(f"INSERT INTO circulars VALUES ({i['id']}, \"{i['title']}\", '{i['link']}')")
             return i
     return None
 
