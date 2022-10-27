@@ -327,5 +327,3 @@ threading.Thread(target=store_latest_circular, daemon=True).start()
 # loop auto_extend_page_list every 24 hours
 if auto_page_increment:
     threading.Thread(target=thread_func_for_auto_extend_page_list, daemon=True).start()
-
-print("Started")

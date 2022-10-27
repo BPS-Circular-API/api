@@ -109,7 +109,7 @@ async def _search(title: str or int):
         # res is the circular title, find the id from the database
         cur.execute(f"SELECT * FROM list_cache WHERE name=\"{res}\"")
         data = cur.fetchone()
-        return_list['data'] = {"title": data[0], "link": data[1], "id": data[2]}
+        return_list['data'] = {"title": data[1], "link": data[2], "id": data[0]}
         log.debug(return_list)
         return return_list
 
