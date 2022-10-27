@@ -8,6 +8,7 @@ import pypdfium2 as pdfium
 import requests
 import threading
 import time
+import sqlite3
 from pydantic import BaseModel
 
 success_response = {
@@ -285,15 +286,18 @@ def get_from_id(_id: int):
     con = sqlite3.connect("./data/data.db")
     cur = con.cursor()
 
-    cur.execute(f"SELECT * FROM circulars WHERE id={_id}")
+    cur.execute(f"SELECT * FROM list_cache WHERE id={_id}")
     data = cur.fetchone()
     if data:
+        log.debug(f"Found circular with id {_id} in the database")
         return data
 
     circular_list = get_circular_list(tuple(page_list), quiet=True)
     for i in circular_list:
         if i['id'] == _id:
-            cur.execute(f"INSERT INTO circulars VALUES ({i['id']}, \"{i['title']}\", '{i['link']}')")
+            log.debug(f"Found circular with id {_id} in the list, adding to DB")
+            cur.execute(f"INSERT INTO list_cache VALUES ({i['id']}, \"{i['title']}\", '{i['link']}')")
+            con.commit()
             return i
     return None
 
