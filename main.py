@@ -90,7 +90,8 @@ async def _search(title: str or int):
     # check if it is a circular id or title
     if title.isdigit() and len(title) == 4:
         return_list = copy.deepcopy(success_response)
-        return_list['data'] = get_from_id(title)
+        res = get_from_id(title)
+        return_list['data'] = {"title": res[1], "link": res[2], "id": res[0]}
         return return_list
 
     all_titles = get_circular_list(page_list)
