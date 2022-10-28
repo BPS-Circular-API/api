@@ -91,7 +91,10 @@ async def _search(title: str or int):
     if title.isdigit() and len(title) == 4:
         return_list = copy.deepcopy(success_response)
         res = get_from_id(title)
-        return_list['data'] = {"title": res[1], "link": res[2], "id": res[0]}
+        if res is not None:
+            return_list['data'] = res
+        else:
+            return_list['data'] = None
         return return_list
 
     all_titles = get_circular_list(page_list)
@@ -110,7 +113,8 @@ async def _search(title: str or int):
     log.debug(res)
 
     res = get_download_url(res)
-    return_list['data'] = {"title": res[0], "link": res[1], "id": res[2]}
+    if res is not None:
+        return_list['data'] = {"title": res[0], "link": res[1], "id": res[2]}
     return return_list
 
 

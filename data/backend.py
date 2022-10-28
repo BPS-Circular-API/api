@@ -290,7 +290,7 @@ def get_from_id(_id: int):
     data = cur.fetchone()
     if data:
         log.debug(f"Found circular with id {_id} in the database")
-        return data
+        return {"title": data[1], "link": data[2], "id": data[0]}
 
     circular_list = get_circular_list(tuple(page_list), quiet=True)
     for i in circular_list:
@@ -298,7 +298,7 @@ def get_from_id(_id: int):
             log.debug(f"Found circular with id {_id} in the list, adding to DB")
             cur.execute(f"INSERT INTO list_cache VALUES ({i['id']}, \"{i['title']}\", '{i['link']}')")
             con.commit()
-            return i
+            return {"title": i['title'], "link": i['link'], "id": i['id']}
     return None
 
 
