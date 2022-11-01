@@ -227,7 +227,7 @@ def get_cached_latest_circular(category: str):
     return circular
 
 
-def get_png(download_url) -> str or None:
+def get_png(download_url: str) -> str or None:
     windows_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
