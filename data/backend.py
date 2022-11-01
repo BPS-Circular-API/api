@@ -266,18 +266,27 @@ def get_png(download_url: str) -> str or None:
         os.mkdir("./circularimages")
 
     page_list = []
-    pil_image = page.render_topil(
-        scale=5,
-        rotation=0,
-        crop=(0, 0, 0, 0),  # Crop doesn't work for some reason
-        colour=(255, 255, 255, 255),
-        annotations=True,
-        greyscale=False,
-        optimise_mode=pdfium.OptimiseMode.NONE,
-    )
 
-    if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
-        os.mkdir("./circularimages")
+    for page, pgno in zip(pdf, range(len(pdf))):
+
+        pil_image = page.render_topil(
+            scale=5,
+            rotation=0,
+            crop=(0, 0, 0, 0),  # Crop doesn't work for some reason
+            colour=(255, 255, 255, 255),
+            annotations=True,
+            greyscale=False,
+            optimise_mode=pdfium.OptimiseMode.NONE,
+        )
+        if pgno == 0:
+            pil_image.save(f"./circularimages/{file_id}.png")
+        else:
+            pil_image.save(f"./circularimages/{file_id}-{pgno + 1}.png")
+
+        if pgno == 0:
+            page_list.append(f"https://bpsapi.rajtech.me/circular/{file_id}.pdf")
+        else:
+            page_list.append(f"https://bpsapi.rajtech.me/circular/{file_id}-{pgno + 1}.pdf")
 
     try:
         os.remove(f"./{file_id}.pdf")
