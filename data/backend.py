@@ -227,13 +227,28 @@ def get_cached_latest_circular(category: str):
     return circular
 
 
-def get_png(download_url) -> str or None:
+def get_png(download_url: str) -> str or None:
     windows_headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
     if os.path.isfile(f"./circularimages/{file_id}.png"):
-        return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
+
+        page_list = []
+        temp = 0
+
+        for file in os.listdir("./circularimages"):
+            if file.endswith(".png"):
+                if file_id in file:
+                    temp += 1
+
+        for i in range(temp):
+            if i == 0:
+                page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}.png")
+            else:
+                page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}-{i + 1}.png")
+
+        return page_list
 
     pdf_file = requests.get(download_url, headers=windows_headers)
 
@@ -246,29 +261,39 @@ def get_png(download_url) -> str or None:
         os.remove(f"./{file_id}.pdf")
         return None
 
-    page = pdf[0]
-
-    pil_image = page.render_topil(
-        scale=5,
-        rotation=0,
-        crop=(0, 0, 0, 0),  # Crop doesn't work for some reason
-        colour=(255, 255, 255, 255),
-        annotations=True,
-        greyscale=False,
-        optimise_mode=pdfium.OptimiseMode.NONE,
-    )
-
     if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
         os.mkdir("./circularimages")
 
-    pil_image.save(f"./circularimages/{file_id}.png")
+    page_list = []
+
+    for page, pgno in zip(pdf, range(len(pdf))):
+
+        pil_image = page.render_topil(
+            scale=5,
+            rotation=0,
+            crop=(0, 0, 0, 0),  # Crop doesn't work for some reason
+            colour=(255, 255, 255, 255),
+            annotations=True,
+            greyscale=False,
+            optimise_mode=pdfium.OptimiseMode.NONE,
+        )
+        if pgno == 0:
+            pil_image.save(f"./circularimages/{file_id}.png")
+        else:
+            pil_image.save(f"./circularimages/{file_id}-{pgno + 1}.png")
+
+        if pgno == 0:
+            page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}.pdf")
+        else:
+            page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}-{pgno + 1}.pdf")
+
     try:
         os.remove(f"./{file_id}.pdf")
     except WindowsError:
         log.error(
             "Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
 
-    return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
+    return page_list
 
 
 ptm = page_generator('ptm')
