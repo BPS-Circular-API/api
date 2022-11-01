@@ -246,7 +246,8 @@ def get_png(download_url: str) -> str or None:
         os.remove(f"./{file_id}.pdf")
         return None
 
-    page = pdf[0]
+    if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
+        os.mkdir("./circularimages")
 
     pil_image = page.render_topil(
         scale=5,
