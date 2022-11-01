@@ -249,6 +249,7 @@ def get_png(download_url: str) -> str or None:
     if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
         os.mkdir("./circularimages")
 
+    page_list = []
     pil_image = page.render_topil(
         scale=5,
         rotation=0,
@@ -262,14 +263,13 @@ def get_png(download_url: str) -> str or None:
     if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
         os.mkdir("./circularimages")
 
-    pil_image.save(f"./circularimages/{file_id}.png")
     try:
         os.remove(f"./{file_id}.pdf")
     except WindowsError:
         log.error(
             "Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
 
-    return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
+    return page_list
 
 
 ptm = page_generator('ptm')
