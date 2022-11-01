@@ -233,7 +233,23 @@ def get_png(download_url: str) -> str or None:
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
     if os.path.isfile(f"./circularimages/{file_id}.png"):
-        return f"https://bpsapi.rajtech.me/circularpng/{file_id}.png"
+
+        page_list = []
+        temp = 0
+
+        for file in os.listdir("./circularimages"):
+            if file.endswith(".png"):
+                if file_id in file:
+                    print(file)
+                    temp += 1
+
+        for i in range(temp):
+            if i == 0:
+                page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}.png")
+            else:
+                page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}-{i + 1}.png")
+
+        return page_list
 
     pdf_file = requests.get(download_url, headers=windows_headers)
 
