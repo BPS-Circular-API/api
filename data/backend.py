@@ -283,9 +283,9 @@ def get_png(download_url: str) -> str or None:
             pil_image.save(f"./circularimages/{file_id}-{pgno + 1}.png")
 
         if pgno == 0:
-            page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}.pdf")
+            page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}.png")
         else:
-            page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}-{pgno + 1}.pdf")
+            page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}-{pgno + 1}.png")
 
     try:
         os.remove(f"./{file_id}.pdf")
