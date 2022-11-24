@@ -89,7 +89,7 @@ def increment_page_number():
 
     # change the value in the config file
     config.set('main', 'default_pages', str(default_pages))
-    with open('../config.ini', 'w') as configfile:
+    with open('./data/config.ini', 'w') as configfile:
         config.write(configfile)
     log.debug("Incremented the page number to " + str(default_pages))
 
@@ -311,7 +311,7 @@ def get_from_id(_id: int):
     con = sqlite3.connect("./data/data.db")
     cur = con.cursor()
 
-    cur.execute(f"SELECT * FROM list_cache WHERE id={_id}")
+    cur.execute(f"SELECT * FROM list_cache WHERE id=?", (_id,))
     data = cur.fetchone()
     if data:
         log.debug(f"Found circular with id {_id} in the database")
@@ -321,7 +321,7 @@ def get_from_id(_id: int):
     for i in circular_list:
         if i['id'] == _id:
             log.debug(f"Found circular with id {_id} in the list, adding to DB")
-            cur.execute(f"INSERT INTO list_cache VALUES ({i['id']}, \"{i['title']}\", '{i['link']}')")
+            cur.execute(f"INSERT INTO list_cache VALUES (?, ?, ?)", (i['id'], i['title'], i['link']))
             con.commit()
             return {"title": i['title'], "link": i['link'], "id": i['id']}
     return None

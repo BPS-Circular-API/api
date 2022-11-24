@@ -33,7 +33,7 @@ async def handler_404(err, e):
 async def root():
     return_list = copy.deepcopy(success_response)
     # noinspection PyTypedDict
-    return_list["data"] = return_list['data'] = "Welcome to the API. Please refer to the documentation at https://bpsapi.rajtech.me/docs for more information."
+    return_list["data"] = "Welcome to the API. Please refer to the documentation at https://bpsapi.rajtech.me/docs for more information."
     return return_list
 
 
