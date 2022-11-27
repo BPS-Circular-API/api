@@ -202,7 +202,12 @@ def get_download_url(title: str) -> tuple or None:
         threads[-1].start()
     for thread in threads:
         thread.join()
-    id_ = mutable[0].split("=")[1].split(":")[0]
+    try:
+        id_ = mutable[0].split("=")[1].split(":")[0]
+    except IndexError:
+        log.error(f"Error with getting id_ for {mutable}")
+        return None
+
     if mutable:
         return mutable[1], mutable[0], id_
     return None
@@ -210,20 +215,50 @@ def get_download_url(title: str) -> tuple or None:
 
 def store_latest_circular():
     while True:
-        data = {
-            "ptm": get_latest_circular(page_generator('ptm')),
-            "general": get_latest_circular(page_generator('general')),
-            "exam": get_latest_circular(page_generator('exam'))
-        }
-        with open("./data/temp.pickle", "wb") as f:
-            pickle.dump(data, f)
+        try:
+            data = {
+                "ptm": get_latest_circular(page_generator('ptm')),
+                "general": get_latest_circular(page_generator('general')),
+                "exam": get_latest_circular(page_generator('exam'))
+            }
+
+            con = sqlite3.connect("./data/data.db")
+            cur = con.cursor()
+
+            cur.execute("SELECT * FROM cache WHERE name = 'circular'")
+
+            if cur.fetchone() is None:
+                cur.execute("INSERT INTO cache VALUES (?, ?)", ("circular", pickle.dumps(data)))
+            else:
+                cur.execute("UPDATE cache SET data = ? WHERE name = 'circular'", (pickle.dumps(data),))
+
+            con.commit()
+            con.close()
+
+        except Exception as e:
+            log.error(f"Error with storing latest circulars: {e}")
+
         time.sleep(3600)
 
 
-def get_cached_latest_circular(category: str):
-    with open("./data/temp.pickle", "rb") as f:
-        data = pickle.load(f)
-    circular = {"title": data[category]['title'], "link": data[category]['link'], "id": data[category]['id']}
+def get_cached_latest_circular(category: str) -> dict or dict[list, list, list]:
+
+    con = sqlite3.connect("./data/data.db")
+    cur = con.cursor()
+    cur.execute("SELECT data FROM cache WHERE name = 'circular'")
+    data = cur.fetchone()
+    con.close()
+
+    if data is None:
+        return {"title": [], "link": [], "id": []}
+
+    print(data)
+    data = pickle.loads(data[0])
+
+    try:
+        circular = {"title": data[category]['title'], "link": data[category]['link'], "id": data[category]['id']}
+    except KeyError:
+        return {}
     return circular
 
 
