@@ -93,17 +93,17 @@ def increment_page_number():
         config.write(configfile)
     log.debug("Incremented the page number to " + str(default_pages))
 
-    ptm = page_generator('ptm')
+    # ptm = page_generator('ptm')
     general = page_generator('general')
-    exam = page_generator('exam')
+    # exam = page_generator('exam')
 
-    page_list = tuple([ptm, general, exam])
+    page_list = tuple([general]) # , ptm, exam
 
 
 def page_generator(category: str or int, pages: int = -1) -> tuple or None:
     if pages == -1:  # if the number of pages to be generated is not specified, use the default number of pages
         pages = default_pages
-    preset_cats = {"general": 38, "ptm": 40, "exam": 35}
+    preset_cats = {"general": 44} #, "ptm": 00, "exam": 00
     # check if category is a number
     if category.isnumeric():
         category = int(category)
@@ -217,9 +217,9 @@ def store_latest_circular():
     while True:
         try:
             data = {
-                "ptm": get_latest_circular(page_generator('ptm')),
+                # "ptm": get_latest_circular(page_generator('ptm')),
                 "general": get_latest_circular(page_generator('general')),
-                "exam": get_latest_circular(page_generator('exam'))
+                # "exam": get_latest_circular(page_generator('exam'))
             }
 
             con = sqlite3.connect("./data/data.db")
@@ -331,14 +331,14 @@ def get_png(download_url: str) -> str or None:
     return page_list
 
 
-ptm = page_generator('ptm')
+# ptm = page_generator('ptm')
 general = page_generator('general')
-exam = page_generator('exam')
+# exam = page_generator('exam')
 page_list = []
 # add the items of ptm, general and exam to page_list
-page_list.extend(ptm)
+# page_list.extend(ptm)
 page_list.extend(general)
-page_list.extend(exam)
+# page_list.extend(exam)
 
 
 def get_from_id(_id: int):
