@@ -71,6 +71,13 @@ try:
     default_pages: int = config.getint('main', 'default_pages')
     log_level: str = config.get('main', 'log_level')
     auto_page_increment: bool = config.getboolean('main', 'auto_page_increment')
+
+    # get a dict of all the categories
+    categories = dict(config.items('categories'))
+    # make sure all the values are integers
+    for category in categories.keys():
+        categories[category] = int(categories[category])
+    print(categories)
 except Exception as err:
     log.critical("Error reading config.ini. Error: " + str(err))
     auto_page_increment = True
@@ -84,7 +91,7 @@ log.debug(f"Log level set to {log.level}")
 
 # Functions
 def increment_page_number():
-    global default_pages, ptm, general, exam, page_list
+    global default_pages, page_list
     default_pages += 1
 
     # change the value in the config file
@@ -93,17 +100,13 @@ def increment_page_number():
         config.write(configfile)
     log.debug("Incremented the page number to " + str(default_pages))
 
-    # ptm = page_generator('ptm')
-    general = page_generator('general')
-    # exam = page_generator('exam')
-
-    page_list = tuple([general]) # , ptm, exam
+    page_lists = [page_generator(categories[category]) for category in categories.values()]
+    page_list = tuple(page_lists)
 
 
 def page_generator(category: str or int, pages: int = -1) -> tuple or None:
     if pages == -1:  # if the number of pages to be generated is not specified, use the default number of pages
         pages = default_pages
-    preset_cats = {"general": 44} #, "ptm": 00, "exam": 00
     # check if category is a number
     if category.isnumeric():
         category = int(category)
@@ -111,7 +114,7 @@ def page_generator(category: str or int, pages: int = -1) -> tuple or None:
             return None
 
     if type(category) == str:
-        category = preset_cats[category]
+        category = categories[category]
 
     urls = []
     # generate urls incrementing by 20 but starting from 0
@@ -217,9 +220,8 @@ def store_latest_circular():
     while True:
         try:
             data = {
-                # "ptm": get_latest_circular(page_generator('ptm')),
-                "general": get_latest_circular(page_generator('general')),
-                # "exam": get_latest_circular(page_generator('exam'))
+                category: get_latest_circular(page_generator(category))
+                for category in categories
             }
 
             con = sqlite3.connect("./data/data.db")
@@ -331,14 +333,11 @@ def get_png(download_url: str) -> str or None:
     return page_list
 
 
-# ptm = page_generator('ptm')
-general = page_generator('general')
-# exam = page_generator('exam')
 page_list = []
-# add the items of ptm, general and exam to page_list
-# page_list.extend(ptm)
-page_list.extend(general)
-# page_list.extend(exam)
+try:
+    page_list.extend(page_generator(category) for category in categories.keys())
+except Exception as e:
+    log.error(f"Error with getting circular page list line 337: {e}")
 
 
 def get_from_id(_id: int):
@@ -365,7 +364,7 @@ def get_from_id(_id: int):
 def auto_extend_page_list():
     old_default_pages = default_pages
     while True:
-        circulars = get_circular_list(general, quiet=True)
+        circulars = get_circular_list(tuple(page_list[0]), quiet=True)
         if len(circulars) == default_pages * 20:
             increment_page_number()
         else:
