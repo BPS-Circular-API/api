@@ -127,7 +127,8 @@ def page_generator(category: str or int, pages: int = -1) -> tuple or None:
 
 def per_url(url, old_titles, unprocessed_links, roll) -> None:
     soup = bs4.BeautifulSoup(requests.get(url, headers={
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/81.0.4044.138 Safari/537.36 "
     }).text, "lxml")
 
     for title in soup.select(".pd-title"):
@@ -244,7 +245,6 @@ def store_latest_circular():
 
 
 def get_cached_latest_circular(category: str) -> dict or dict[list, list, list]:
-
     con = sqlite3.connect("./data/data.db")
     cur = con.cursor()
     cur.execute("SELECT data FROM cache WHERE name = 'circular'")
