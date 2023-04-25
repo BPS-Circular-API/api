@@ -77,7 +77,7 @@ try:
     # make sure all the values are integers
     for category in categories.keys():
         categories[category] = int(categories[category])
-    print(categories)
+    log.debug(categories)
 except Exception as err:
     log.critical("Error reading config.ini. Error: " + str(err))
     auto_page_increment = True
@@ -164,10 +164,12 @@ def get_circular_list(url: tuple, quiet: bool = False) -> list:
         if not quiet:
             if not auto_page_increment:
                 log.error(
-                    "The default number of pages is too low, and older circulars may become unreachable by the web-scraper. Please increase the number of pages in config.ini")
+                    "The default number of pages is too low, and older circulars may become unreachable by the "
+                    "web-scraper. Please increase the number of pages in config.ini")
             else:
                 log.info(
-                    "The default number of pages is was to low in config.ini, It has been automatically increased. If you want to disable this, set auto_page_increment to False in config.ini")
+                    "The default number of pages is was to low in config.ini, It has been automatically increased. If "
+                    "you want to disable this, set auto_page_increment to False in config.ini")
                 auto_extend_page_list()
 
     return circulars
@@ -254,7 +256,6 @@ def get_cached_latest_circular(category: str) -> dict or dict[list, list, list]:
     if data is None:
         return {"title": [], "link": [], "id": []}
 
-    print(data)
     data = pickle.loads(data[0])
 
     try:
@@ -333,9 +334,10 @@ def get_png(download_url: str) -> str or None:
     return page_list
 
 
-page_list = []
+page_list: list[tuple, tuple, tuple] = []
 try:
     page_list.extend(page_generator(category) for category in categories.keys())
+    print(page_list)
 except Exception as e:
     log.error(f"Error with getting circular page list line 337: {e}")
 
@@ -351,13 +353,22 @@ def get_from_id(_id: int):
         log.debug(f"Found circular with id {_id} in the database")
         return {"title": data[1], "link": data[2], "id": data[0]}
 
-    circular_list = get_circular_list(tuple(page_list), quiet=True)
+    log.debug(page_list)
+
+    list_of_thing = []
+    for i in page_list:
+        for e in i:
+            list_of_thing.append(e)
+
+    print(list_of_thing)
+
+    circular_list = get_circular_list(list_of_thing, quiet=True)
     for i in circular_list:
         if i['id'] == _id:
             log.debug(f"Found circular with id {_id} in the list, adding to DB")
-            cur.execute("INSERT INTO list_cache VALUES (?, ?, ?)", (i['id'], i['title'], i['link']))
+            cur.execute("INSERT INTO list_cache VALUES (?, ?, ?)", (i['id'], i['title'].strip(), i['link'].strip()))
             con.commit()
-            return {"title": i['title'], "link": i['link'], "id": i['id']}
+            return {"title": i['title'].strip(), "link": i['link'].strip(), "id": i['id']}
     return None
 
 
@@ -383,7 +394,8 @@ if default_pages < 1:
     auto_extend_page_list()
     log.critical("default_pages is less than 1. Setting it to 5")
 
-# this is a daemon thread, daemon processes get auto-terminated when the program ends, so we don't have to worry about it
+# this is a daemon thread, daemon processes get auto-terminated when the program ends, so we don't have to worry 
+# about it 
 log.info("Starting latest circular thread")
 threading.Thread(target=store_latest_circular, daemon=True).start()
 

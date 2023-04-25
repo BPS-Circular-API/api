@@ -105,7 +105,12 @@ async def _search(title: str or int):
             return_list['data'] = None
         return return_list
 
-    all_titles = get_circular_list(page_list)
+    # flatten the list
+    list_of_thing = [item for sublist in page_list for item in sublist]
+
+    print(list_of_thing)
+
+    all_titles = get_circular_list(tuple(list_of_thing))
     corpus = SearchCorpus()
 
     for t in all_titles:
