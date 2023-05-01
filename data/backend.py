@@ -10,6 +10,8 @@ import threading
 import time
 import sqlite3
 from pydantic import BaseModel
+from bs4 import BeautifulSoup, SoupStrainer
+from concurrent.futures import ThreadPoolExecutor
 
 success_response = {
     "status": "success",
@@ -22,6 +24,13 @@ error_response = {
     "http_status": 500,
     "error": ""
 }
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) "
+                  "Chrome/81.0.4044.138 Safari/537.36 "
+}
+
+bps_url = "https://bpsdoha.com"
 
 
 # Initializing the Logger
@@ -74,10 +83,13 @@ try:
 
     # get a dict of all the categories
     categories = dict(config.items('categories'))
+
     # make sure all the values are integers
     for category in categories.keys():
         categories[category] = int(categories[category])
+
     log.debug(categories)
+
 except Exception as err:
     log.critical("Error reading config.ini. Error: " + str(err))
     auto_page_increment = True
