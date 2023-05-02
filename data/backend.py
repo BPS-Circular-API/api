@@ -101,20 +101,18 @@ log.setLevel(log_level.upper() if log_level.upper() in ["DEBUG", "INFO", "WARNIN
 log.debug(f"Log level set to {log.level}")
 
 
-# Functions
-def increment_page_number():
-    global default_pages, page_list
-    default_pages += 1
+#
+#
+#
+#
+#
 
-    # change the value in the config file
-    config.set('main', 'default_pages', str(default_pages))
-    with open('./data/config.ini', 'w') as configfile:
-        config.write(configfile)
-    log.debug("Incremented the page number to " + str(default_pages))
 
-    page_lists = [page_generator(categories[category]) for category in categories.values()]
-    page_list = tuple(page_lists)
+async def get_num_pages(category_id):
+    url = f'{bps_url}/circular/category/{category_id}'
+    # print(f"Getting number of pages for {url}")
 
+    response = requests.get(url, headers=headers)
 
 def page_generator(category: str or int, pages: int = -1) -> tuple or None:
     if pages == -1:  # if the number of pages to be generated is not specified, use the default number of pages
