@@ -155,32 +155,21 @@ def thread_get_list(category_id, page):
 
 
 async def get_list(category_id, pages):
+    with ThreadPoolExecutor() as executor:
+        # scrape each page using a thread and collect the results
+        futures = [executor.submit(thread_get_list, category_id, page) for page in range(1, pages + 1)]
+        files_list = [future.result() for future in futures]
 
-    if len(circulars) == default_pages * 20:
-        if not quiet:
-            if not auto_page_increment:
-                log.error(
-                    "The default number of pages is too low, and older circulars may become unreachable by the "
-                    "web-scraper. Please increase the number of pages in config.ini")
-            else:
-                log.info(
-                    "The default number of pages is was to low in config.ini, It has been automatically increased. If "
-                    "you want to disable this, set auto_page_increment to False in config.ini")
-                auto_extend_page_list()
+    # flatten the list of lists into a single list
+    files = [file for files in files_list for file in files]
 
-    return circulars
+    # sort files by page number
+    files.sort(key=lambda file: int(file['id']))
 
+    # invert the list so that the most recent file is first
+    files.reverse()
 
-def get_latest_circular(category: tuple) -> dict[str, str]:
-    soup = bs4.BeautifulSoup(requests.get(category[0], headers={
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text,
-                             "lxml")
-    title = soup.select(".pd-title")[0].text
-    # Keep in mind, {link} already has a / at the start
-    link = "https://bpsdoha.com" + str(soup.select(".btn.btn-success")[0]["href"]).strip().split(":")[0]
-    id_ = link.split("=")[1].split(":")[0]
-    circulars = {"title": title.strip(), "link": link.strip(), "id": id_.strip()}
-    return circulars
+    return files
 
 
 def thread_function_for_get_download_url(title, url, mutable):
