@@ -140,28 +140,21 @@ def thread_get_list(category_id, page):
 
     response = requests.get(url, headers=headers)
 
-def get_circular_list(url: tuple, quiet: bool = False) -> list:
-    titles, links, ids, unprocessed_links, threads, old_titles = [], [], [], [], [], []
+    soup = BeautifulSoup(response.content, 'html.parser')
 
-    for URL in range(len(url)):
-        old_titles.append([])
-        unprocessed_links.append([])
-        threads.append(threading.Thread(target=lambda: per_url(url[URL], old_titles, unprocessed_links, URL)))
-        threads[-1].start()
+    fileboxes = soup.find_all('div', class_='pd-filebox')
 
-    for thread in threads:
-        thread.join()
+    files = []
+    for filebox in fileboxes:
+        name = filebox.find('div', class_='pd-title').text
+        url = bps_url + filebox.find('a', class_='btn-success')['href'].split(':')[0]
+        id_ = url.split('=')[1].split(':')[0]
+        files.append({'title': name, 'link': url, 'id': id_})
 
-    for unprocessed_link in unprocessed_links:
-        for link in unprocessed_link:
-            links.append(f"https://bpsdoha.com{(link.split(':'))[0]}".strip())
-            id_ = link.split('=')[1].split(":")[0]
-            ids.append(id_)
+    return files
 
-    for old_title in old_titles:
-        titles += old_title
 
-    circulars = [{"title": title, "id": id_, "link": link} for title, link, id_ in zip(titles, links, ids)]
+async def get_list(category_id, pages):
 
     if len(circulars) == default_pages * 20:
         if not quiet:
