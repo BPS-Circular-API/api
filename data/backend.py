@@ -114,38 +114,31 @@ async def get_num_pages(category_id):
 
     response = requests.get(url, headers=headers)
 
-def page_generator(category: str or int, pages: int = -1) -> tuple or None:
-    if pages == -1:  # if the number of pages to be generated is not specified, use the default number of pages
-        pages = default_pages
-    # check if category is a number
-    if category.isnumeric():
-        category = int(category)
-        if category < 1:
-            return None
+    parse_only = SoupStrainer('div', class_='pagination')
+    soup = BeautifulSoup(response.content, 'lxml', parse_only=parse_only)
 
-    if type(category) == str:
-        category = categories[category]
+    # Check if pagination exists on the page
+    if not soup:
+        return 1
 
-    urls = []
-    # generate urls incrementing by 20 but starting from 0
-    for i in range(0, pages * 20, 20):
-        urls.append(f"https://www.bpsdoha.net/circular/category/{category}?start={i}")
-    log.debug(urls)
+    # Find the page count text
+    try:
+        pginline = soup.find('div', class_='pginline').text.strip()
+    except AttributeError:
+        return 0
 
-    return tuple(urls)
+    try:
+        page_count = int(pginline.split()[-1])
+    except IndexError:
+        page_count = 1
+
+    return page_count
 
 
-def per_url(url, old_titles, unprocessed_links, roll) -> None:
-    soup = bs4.BeautifulSoup(requests.get(url, headers={
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/81.0.4044.138 Safari/537.36 "
-    }).text, "lxml")
+def thread_get_list(category_id, page):
+    url = f'{bps_url}/circular/category/{category_id}?start={(page - 1) * 20}'
 
-    for title in soup.select(".pd-title"):
-        old_titles[roll].append(title.text)
-    for link in soup.select(".btn.btn-success"):
-        unprocessed_links[roll].append(link["href"])
-
+    response = requests.get(url, headers=headers)
 
 def get_circular_list(url: tuple, quiet: bool = False) -> list:
     titles, links, ids, unprocessed_links, threads, old_titles = [], [], [], [], [], []
