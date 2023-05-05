@@ -48,25 +48,37 @@ async def _get_categories():
 # Get RAW circular lists
 @app.get("/list")
 async def _get_circular_list(category: str or int):
-    url = page_generator(category.lower())
-    if url is None:
+    # Get the category id from the category name/id provided
+    if type(category) == int or category.isdigit():
+        category = int(category)
+    else:
+        category = categories.get(category.lower())
+
+        if category is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
+            )
+
+    # Get the number of pages in the category
+
+    num_pages = await get_num_pages(category)
+
+    if num_pages == 0:
         raise HTTPException(
             status_code=400,
             detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
         )
 
-    res = get_circular_list(url)
+    # Get the circular list
+    res = await get_list(category, num_pages)
+
+    # Add the result to the return list
     return_list = copy.deepcopy(success_response)
+    return_list['data'] = res
 
-    for element in res:
-        title = element['title']
-        id_ = element['id']
-        link = element['link']
-
-        return_list['data'].append({"title": title, "link": link, "id": id_})
-
-    if len(return_list['data']) == 0:
-        return_list['data'] = "There are no circulars in this category."
+    # if len(return_list['data']) == 0:
+    #     return_list['data'] = []
 
     return return_list
 
@@ -74,17 +86,22 @@ async def _get_circular_list(category: str or int):
 # Get latest circular
 @app.get("/latest")
 async def _get_latest_circular(category: str or int):
-    url = page_generator(category.lower())
-    if url is None:
-        raise HTTPException(
-            status_code=400,
-            detail=f'Invalid category.'
-        )
+    # Get the category id from the category name/id provided
+    if type(category) == int or category.isdigit():
+        category = int(category)
+    else:
+        category = categories.get(category.lower())
+
+        if category is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
+            )
 
     return_list = copy.deepcopy(success_response)
 
     try:
-        res = get_latest_circular(url)
+        res = await get_latest(category)
         return_list['data'] = res
     except Exception as e:
         return_list['data'] = "There are no circulars in this category."
@@ -94,26 +111,29 @@ async def _get_latest_circular(category: str or int):
 
 
 @app.get("/search")
-async def _search(title: str or int):
+async def _search(title: str or int):   # TODO try to make searching by id faster
     # check if it is a circular id or title
     if title.isdigit() and len(title) == 4:
         return_list = copy.deepcopy(success_response)
-        res = get_from_id(title)
+        res = await search_from_id(title)
+        
         if res is not None:
             return_list['data'] = res
         else:
             return_list['data'] = None
+            
         return return_list
 
-    # flatten the list
-    list_of_thing = [item for sublist in page_list for item in sublist]
+    # If title is a circular title, get a list of all circulars by scraping the website
+    mega_list = []
+    for i in categories.keys():
+        mega_list += await get_list(categories[i], await get_num_pages(categories[i]))
+    all_titles = [circular['title'] for circular in mega_list if circular['title'] is not None]
 
-    print(list_of_thing)
-
-    all_titles = get_circular_list(tuple(list_of_thing))
+    # Create a corpus of all the titles, and search
     corpus = SearchCorpus()
 
-    for t in all_titles:
+    for t in mega_list:
         corpus.add_(t['title'])
     res = corpus.search(title, prnt=False)
 
@@ -123,39 +143,34 @@ async def _search(title: str or int):
         return_list['data'] = None
         return return_list
 
-    log.debug(res)
+    # find the index of the title in mega_list['title'] and return the whole circular
+    circular = mega_list[all_titles.index(res)]
 
-    res = get_download_url(res)
+    # res = get_download_url(res)
     if res is not None:
-        return_list['data'] = {"title": res[0], "link": res[1], "id": res[2]}
+        return_list['data'] = circular
     return return_list
 
 
 @app.get("/cached-latest")
 async def _get_cached_latest_circular(category: str or int):
-    if not category.lower() in ['ptm', 'general', 'exam']:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid category. Valid categories for /cached-latest are 'ptm', 'general' and 'exam'."
-        )
-
-    res = get_cached_latest_circular(category.lower())
-
-    return_list = copy.deepcopy(success_response)
-    return_list['data'] = res
-    return return_list
+    raise HTTPException(
+        status_code=410,
+        detail=f'This endpoint has been deprecated.'
+    )
 
 
 @app.get("/getpng")
 async def _get_png(url):
-    bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)\/circular\/category\/[0-9]+.*\?download=[0-9]+"
+    bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)" \
+                         r"\/circular\/category\/[0-9]+.*\?download=[0-9]+"
     if not re.match(bps_circular_regex, url):
         raise HTTPException(
             status_code=400,
             detail=f"Invalid URL"
         )
 
-    res = get_png(url)
+    res = await get_png(url)
 
     return_list = copy.deepcopy(success_response)
     # noinspection PyTypedDict
