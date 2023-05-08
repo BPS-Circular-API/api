@@ -208,7 +208,7 @@ async def get_png(download_url: str) -> str or None:
 
         return page_list
 
-    pdf_file = requests.get(download_url, headers=windows_headers)
+    pdf_file = requests.get(download_url, headers=headers)
 
     with open(f"./{file_id}.pdf", "wb") as f:
         f.write(pdf_file.content)
