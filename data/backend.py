@@ -110,7 +110,6 @@ log.debug(f"Log level set to {log.level}")
 
 async def get_num_pages(category_id):
     url = f'{bps_url}/circular/category/{category_id}'
-    # print(f"Getting number of pages for {url}")
 
     response = requests.get(url, headers=headers)
 
@@ -172,87 +171,23 @@ async def get_list(category_id, pages):
     return files
 
 
-def thread_function_for_get_download_url(title, url, mutable):
-    soup = bs4.BeautifulSoup(requests.get(url, headers={
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36"}).text,
-                             "lxml")
-    titles_soup = soup.select(".pd-title")
-    for title_no in range(len(titles_soup)):
-        if str(titles_soup[title_no].text).strip().lower() == title.strip().lower():
-            mutable.append("https://bpsdoha.com" +
-                           str(soup.select(".btn.btn-success")[title_no]["href"]).strip().strip().split(":")[0])
-            mutable.append(str(titles_soup[title_no].text).strip())
+async def get_latest(category_id):
+    url = f"{bps_url}/circular/category/{category_id}"
+    response = requests.get(url, headers=headers)
+
+    # Parse the response
+    parse_only = SoupStrainer('div', class_='pd-filebox')
+    soup = BeautifulSoup(response.content, 'lxml', parse_only=parse_only)
+
+    # Find the first filebox and get the name and url
+    name = soup.find('div', class_='pd-title').text
+    url = bps_url + soup.find('a', class_='btn-success')['href'].split(':')[0]
+    id_ = url.split('=')[1].split(':')[0]
+
+    return {'title': name, 'link': url, 'id': id_}
 
 
-def get_download_url(title: str) -> tuple or None:
-    mutable, threads = [], []
-
-    for URL in page_list:
-        threads.append(threading.Thread(
-            target=lambda: thread_function_for_get_download_url(title, URL, mutable)))
-        threads[-1].start()
-    for thread in threads:
-        thread.join()
-    try:
-        id_ = mutable[0].split("=")[1].split(":")[0]
-    except IndexError:
-        log.error(f"Error with getting id_ for {mutable}")
-        return None
-
-    if mutable:
-        return mutable[1], mutable[0], id_
-    return None
-
-
-def store_latest_circular():
-    while True:
-        try:
-            data = {
-                category: get_latest_circular(page_generator(category))
-                for category in categories
-            }
-
-            con = sqlite3.connect("./data/data.db")
-            cur = con.cursor()
-
-            cur.execute("SELECT * FROM cache WHERE name = 'circular'")
-
-            if cur.fetchone() is None:
-                cur.execute("INSERT INTO cache VALUES (?, ?)", ("circular", pickle.dumps(data)))
-            else:
-                cur.execute("UPDATE cache SET data = ? WHERE name = 'circular'", (pickle.dumps(data),))
-
-            con.commit()
-            con.close()
-
-        except Exception as e:
-            log.error(f"Error with storing latest circulars: {e}")
-
-        time.sleep(3600)
-
-
-def get_cached_latest_circular(category: str) -> dict or dict[list, list, list]:
-    con = sqlite3.connect("./data/data.db")
-    cur = con.cursor()
-    cur.execute("SELECT data FROM cache WHERE name = 'circular'")
-    data = cur.fetchone()
-    con.close()
-
-    if data is None:
-        return {"title": [], "link": [], "id": []}
-
-    data = pickle.loads(data[0])
-
-    try:
-        circular = {"title": data[category]['title'], "link": data[category]['link'], "id": data[category]['id']}
-    except KeyError:
-        return {}
-    return circular
-
-
-def get_png(download_url: str) -> str or None:
-    windows_headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/54.0.2840.99 Safari/537.36'}
+async def get_png(download_url: str) -> str or None:
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
     if os.path.isfile(f"./circularimages/{file_id}.png"):
