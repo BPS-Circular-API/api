@@ -249,76 +249,41 @@ async def get_png(download_url: str) -> str or None:
         os.remove(f"./{file_id}.pdf")
     except WindowsError:
         log.error(
-            "Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. Please delete the PDF file manually.")
+            "Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. "
+            "Please delete the PDF file manually.")
 
     return page_list
 
 
-page_list: list[tuple, tuple, tuple] = []
-try:
-    page_list.extend(page_generator(category) for category in categories.keys())
-    print(page_list)
-except Exception as e:
-    log.error(f"Error with getting circular page list line 337: {e}")
-
-
-def get_from_id(_id: int):
-    # go through all the bps circular pages and look for the id in the url
+async def search_from_id(_id: int):
+    # Try to find the circular in the database
     con = sqlite3.connect("./data/data.db")
     cur = con.cursor()
 
     cur.execute("SELECT * FROM list_cache WHERE id=?", (_id,))
     data = cur.fetchone()
+
+    # If the circular is found in the database, return it
     if data:
         log.debug(f"Found circular with id {_id} in the database")
         return {"title": data[1], "link": data[2], "id": data[0]}
 
-    log.debug(page_list)
+    # If the circular is not found in the database, scrape the website
+    for category in categories:
+        category_id = categories[category]
 
-    list_of_thing = []
-    for i in page_list:
-        for e in i:
-            list_of_thing.append(e)
+        # Get the list of circulars
+        circular_list = await get_list(category_id, await get_num_pages(category_id))
 
-    print(list_of_thing)
+        # Check if the circular is in the list
+        for circular in circular_list:
 
-    circular_list = get_circular_list(list_of_thing, quiet=True)
-    for i in circular_list:
-        if i['id'] == _id:
-            log.debug(f"Found circular with id {_id} in the list, adding to DB")
-            cur.execute("INSERT INTO list_cache VALUES (?, ?, ?)", (i['id'], i['title'].strip(), i['link'].strip()))
-            con.commit()
-            return {"title": i['title'].strip(), "link": i['link'].strip(), "id": i['id']}
+            # If the given id is found on the website, add it to the database and return it
+            if circular['id'] == _id:
+                log.debug(f"Found circular with id {_id} in the list, adding to DB")
+                cur.execute("INSERT INTO list_cache VALUES (?, ?, ?)", (circular['id'], circular['title'].strip(),
+                                                                        circular['link'].strip()))
+                con.commit()
+                return circular
+
     return None
-
-
-def auto_extend_page_list():
-    old_default_pages = default_pages
-    while True:
-        circulars = get_circular_list(tuple(page_list[0]), quiet=True)
-        if len(circulars) == default_pages * 20:
-            increment_page_number()
-        else:
-            break
-    if old_default_pages != default_pages:
-        log.info(f"Default page number has been increased from {old_default_pages} to {default_pages}")
-
-
-def thread_func_for_auto_extend_page_list():
-    while True:
-        auto_extend_page_list()
-        time.sleep(60 * 60 * 24)
-
-
-if default_pages < 1:
-    auto_extend_page_list()
-    log.critical("default_pages is less than 1. Setting it to 5")
-
-# this is a daemon thread, daemon processes get auto-terminated when the program ends, so we don't have to worry 
-# about it 
-log.info("Starting latest circular thread")
-threading.Thread(target=store_latest_circular, daemon=True).start()
-
-# loop auto_extend_page_list every 24 hours
-if auto_page_increment:
-    threading.Thread(target=thread_func_for_auto_extend_page_list, daemon=True).start()
