@@ -36,7 +36,7 @@ class SearchCorpus:
         self.corpus.append(self.Sentence(sentence, self.r))
 
     # function to search
-    def search(self, q: str, prnt: bool = False) -> str or None:
+    def search(self, q: str, amount: int = 1,  prnt: bool = False) -> str or None:
 
         global keyword_
         try:
@@ -106,7 +106,11 @@ class SearchCorpus:
                     string__ += f"{a__}\n"
                     string__ += "\n"
 
-            return results[0][1].raw
+
+            #return results[0][1].raw
+            # return based on amount (increase amount to get more results)
+            return [a[1].raw for a in results[:amount]]
+
         except IndexError:
             return None
         except Exception as e:
