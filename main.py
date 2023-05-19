@@ -111,14 +111,14 @@ async def _get_latest_circular(category: str or int):
 
 
 @app.get("/search")
-async def _search(title: str or int):   # TODO try to make searching by id faster
+async def _search(title: str or int, amount: int = None):   # TODO try to make searching by id faster
     # check if it is a circular id or title
     if title.isdigit() and len(title) == 4:
         return_list = copy.deepcopy(success_response)
         res = await search_from_id(title)
         
         if res is not None:
-            return_list['data'] = res
+            return_list['data'] = [res]
         else:
             return_list['data'] = None
             
@@ -135,7 +135,7 @@ async def _search(title: str or int):   # TODO try to make searching by id faste
 
     for t in mega_list:
         corpus.add_(t['title'])
-    res = corpus.search(title, prnt=False)
+    res = corpus.search(title, prnt=False, amount=amount)
 
     return_list = copy.deepcopy(success_response)
 
@@ -144,16 +144,18 @@ async def _search(title: str or int):   # TODO try to make searching by id faste
         return return_list
 
     # find the index of the title in mega_list['title'] and return the whole circular
-    circular = mega_list[all_titles.index(res)]
+    circulars = [
+        mega_list[all_titles.index(i)] for i in res
+    ]
 
     # res = get_download_url(res)
     if res is not None:
-        return_list['data'] = circular
+        return_list['data'] = circulars
     return return_list
 
 
 @app.get("/cached-latest")
-async def _get_cached_latest_circular(category: str or int):
+async def _get_cached_latest_circular():
     raise HTTPException(
         status_code=410,
         detail=f'This endpoint has been deprecated.'
