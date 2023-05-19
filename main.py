@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from data.backend import *
-from data.searchAlgo import SearchCorpus
+from data.search_algo import SearchCorpus
 import copy
 import re
 import sqlite3
@@ -113,7 +113,7 @@ async def _get_latest_circular(category: str or int):
 @app.get("/search")
 async def _search(title: str or int, amount: int = None):   # TODO try to make searching by id faster
     # check if it is a circular id or title
-    if title.isdigit() and len(title) == 4:
+    if type(title) == int or title.isdigit():
         return_list = copy.deepcopy(success_response)
         res = await search_from_id(title)
         
