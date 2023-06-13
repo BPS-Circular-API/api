@@ -210,19 +210,26 @@ async def get_png(download_url: str) -> str or None:
 
     pdf_file = requests.get(download_url, headers=headers)
 
-    with open(f"./{file_id}.pdf", "wb") as f:
-        f.write(pdf_file.content)
-
     try:
-        pdf = pdfium.PdfDocument(f"./{file_id}.pdf")
+        pdf = pdfium.PdfDocument(pdf_file.content)
     except Exception as e:
-        os.remove(f"./{file_id}.pdf")
+        log.error(f"Error parsing PDF. Error: {e}")
         return None
 
     if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
         os.mkdir("./circularimages")
 
     page_list = []
+
+    async def is_blank(im):
+        grey_scale = im.convert('L')
+
+        for x, y in zip(range(0, im.height), range(0, im.width)):
+            val = grey_scale.getpixel((x, y))
+            if val < 200:
+                return False
+
+        return True
 
     for page, pgno in zip(pdf, range(len(pdf))):
 
@@ -235,22 +242,22 @@ async def get_png(download_url: str) -> str or None:
             greyscale=False,
             optimise_mode=pdfium.OptimiseMode.NONE,
         )
+        # check if the page is empty, by checking if the image is all white
+
+        if await is_blank(pil_image):
+            continue
+
         if pgno == 0:
             pil_image.save(f"./circularimages/{file_id}.png")
         else:
             pil_image.save(f"./circularimages/{file_id}-{pgno + 1}.png")
 
+        pil_image.close()
+
         if pgno == 0:
             page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}.png")
         else:
             page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}-{pgno + 1}.png")
-
-    try:
-        os.remove(f"./{file_id}.pdf")
-    except WindowsError:
-        log.error(
-            "Could not delete the original PDF file, this is a Windows error, and is not a problem with the code. "
-            "Please delete the PDF file manually.")
 
     return page_list
 
