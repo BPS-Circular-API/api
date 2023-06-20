@@ -135,7 +135,7 @@ async def _search(title: str or int, amount: int = None):   # TODO try to make s
 
     for t in mega_list:
         corpus.add_(t['title'])
-    res = corpus.search(title, prnt=False, amount=amount)
+    res = corpus.search(title, amount=amount)
 
     return_list = copy.deepcopy(success_response)
 
