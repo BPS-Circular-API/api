@@ -1,18 +1,43 @@
 import itertools
 from rake_nltk import Rake
+from data.backend import log
+
+
+def _install_stopwords_punkt():
+    import nltk
+
+    nltk.download('stopwords')
+    nltk.download('punkt')
 
 
 class SearchCorpus:
     def __init__(self):
         self.corpus = []
-        self.r = Rake()
+        try:
+            self.r = Rake()
+        except LookupError:
+            log.warning("Stopwords/punkt not found, downloading...")
+            _install_stopwords_punkt()
+
+            self.r = Rake()
 
     class Sentence:
         def __init__(self, sentence, model):
+
             self.raw = sentence
             self.sentence = sentence.lower()
-            self.keywords = model.extract_keywords_from_text(sentence)
-            self.ranked_phrases = set(model.get_ranked_phrases_with_scores())
+
+            try:
+                self.keywords = model.extract_keywords_from_text(sentence)
+                self.ranked_phrases = set(model.get_ranked_phrases_with_scores())
+            except LookupError:
+                log.warning("Stopwords/punkt not found, downloading...")
+                _install_stopwords_punkt()
+
+                self.keywords = model.extract_keywords_from_text(sentence)
+                self.ranked_phrases = set(model.get_ranked_phrases_with_scores())
+
+
 
         def __str__(self):
             return f"Sentence: {self.sentence}\nKeywords: {self.keywords}\nRanked Phrases: {self.ranked_phrases}"
