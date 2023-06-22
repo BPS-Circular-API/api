@@ -1,8 +1,9 @@
-beautifulsoup4==4.11.1
-fastapi>=0.85.1
-pydantic==1.9.1
-pypdfium2==2.10.0
+beautifulsoup4==4.12.2
+fastapi>=0.98.0
+pydantic==1.10.9
+pypdfium2==4.16.0
 rake_nltk==1.0.6
-requests==2.27.1
-uvicorn==0.19.0
-lxml==4.9.1
+requests==2.31.0
+uvicorn==0.22.0
+lxml==4.9.2
+pillow==9.5.0
