@@ -78,6 +78,7 @@ except Exception as e:
 
 try:
     log_level: str = config.get('main', 'log_level')
+    base_api_url: str = config.get('main', 'base_api_url')
 
     # get a dict of all the categories
     categories = dict(config.items('categories'))
@@ -96,6 +97,8 @@ except Exception as err:
 log.setLevel(log_level.upper() if log_level.upper() in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] else "INFO")
 log.debug(f"Log level set to {log.level}")
 
+# remove trailing slash from base_api_url
+base_api_url = base_api_url.rstrip('/')
 
 #
 #
@@ -198,9 +201,9 @@ async def get_png(download_url: str) -> str or None:
 
         for i in range(temp):
             if i == 0:
-                page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}.png")
+                page_list.append(f"{base_api_url}/circular-image/{file_id}.png")
             else:
-                page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}-{i + 1}.png")
+                page_list.append(f"{base_api_url}/circular-image/{file_id}-{i + 1}.png")
 
         return page_list
 
@@ -251,9 +254,9 @@ async def get_png(download_url: str) -> str or None:
         pil_image.close()
 
         if pgno == 0:
-            page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}.png")
+            page_list.append(f"{base_api_url}/circular-image/{file_id}.png")
         else:
-            page_list.append(f"https://bpsapi.rajtech.me/circularpng/{file_id}-{pgno + 1}.png")
+            page_list.append(f"{base_api_url}/circular-image/{file_id}-{pgno + 1}.png")
 
     return page_list
 
@@ -284,8 +287,10 @@ async def search_from_id(_id: int):
             # If the given id is found on the website, add it to the database and return it
             if circular['id'] == _id:
                 log.debug(f"Found circular with id {_id} in the list, adding to DB")
-                cur.execute("INSERT INTO list_cache VALUES (?, ?, ?)", (circular['id'], circular['title'].strip(),
-                                                                        circular['link'].strip()))
+                cur.execute(
+                    "INSERT INTO list_cache VALUES (?, ?, ?)",
+                    (circular['id'], circular['title'].strip(), circular['link'].strip())
+                )
                 con.commit()
                 return circular
 
