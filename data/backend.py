@@ -77,9 +77,7 @@ except Exception as e:
     exit()
 
 try:
-    default_pages: int = config.getint('main', 'default_pages')
     log_level: str = config.get('main', 'log_level')
-    auto_page_increment: bool = config.getboolean('main', 'auto_page_increment')
 
     # get a dict of all the categories
     categories = dict(config.items('categories'))
@@ -92,8 +90,6 @@ try:
 
 except Exception as err:
     log.critical("Error reading config.ini. Error: " + str(err))
-    auto_page_increment = True
-    default_pages = -1
     log_level = "INFO"
 
 # set log level
