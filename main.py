@@ -5,6 +5,7 @@ import copy
 import re
 import sqlite3
 from starlette.responses import JSONResponse
+from fastapi.responses import FileResponse
 
 app = FastAPI(
     title="BPS Circular API",
@@ -171,3 +172,44 @@ async def _get_png(url):
     return_list['data'] = res
 
     return return_list
+
+
+@app.get("/circular-image/{image_path}")
+async def _get_circular_images(image_path) -> FileResponse:
+    # return ./cicularimages/{image_path} as an image
+
+    if not os.path.exists(f"./circularimages/{image_path}"):
+
+        try:
+            # If the imagepath is a circular id with .png extension
+            if image_path[:4].isdigit() and image_path.endswith(".png"):
+                # if image is referring to not first page of circular
+                if "-" in image_path:
+                    raise LookupError
+
+                # try to get the circular
+                res = await search_from_id(image_path[:4])
+                if res is None:
+                    raise LookupError
+
+                # Try to get the image
+                res = await get_png(res['link'])
+                if res is None:
+                    raise LookupError
+
+                # if the image exists now
+                if os.path.exists(f"./circularimages/{image_path}"):
+                    return FileResponse(f"./circularimages/{image_path}")
+                else:
+                    raise LookupError
+
+            else:
+                raise LookupError
+
+        except LookupError:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Image not found"
+            )
+
+    return FileResponse(f"./circularimages/{image_path}")
