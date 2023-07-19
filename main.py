@@ -112,7 +112,7 @@ async def _get_latest_circular(category: str or int):
 
 
 @app.get("/search")
-async def _search(query: str or int, amount: int = None):  # TODO try to make searching by id faster
+async def _search(query: str or int, amount: int = 3):  # TODO try to make searching by id faster
     # check if it is a circular id or title
     if type(query) == int or query.isdigit():
         return_list = copy.deepcopy(success_response)
