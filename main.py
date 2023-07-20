@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
 from data.backend import *
 from data.search_algo import SearchCorpus
 import copy
@@ -56,20 +56,20 @@ async def _get_circular_list(category: str or int):
         category = categories.get(category.lower())
 
         if category is None:
-            raise HTTPException(
-                status_code=400,
-                detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
-            )
+            error = copy.deepcopy(error_response)
+            error['error'] = f'Invalid category'
+            error['http_status'] = 400
+            return JSONResponse(content=error, status_code=400)
 
     # Get the number of pages in the category
 
     num_pages = await get_num_pages(category)
 
     if num_pages == 0:
-        raise HTTPException(
-            status_code=400,
-            detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
-        )
+        error = copy.deepcopy(error_response)
+        error['error'] = f'Invalid category'
+        error['http_status'] = 400
+        return JSONResponse(content=error, status_code=400)
 
     # Get the circular list
     res = await get_list(category, num_pages)
@@ -94,10 +94,10 @@ async def _get_latest_circular(category: str or int):
         category = categories.get(category.lower())
 
         if category is None:
-            raise HTTPException(
-                status_code=400,
-                detail=f'Invalid category. Valid categories are "ptm", "general" and "exam".'
-            )
+            error = copy.deepcopy(error_response)
+            error['error'] = f'Invalid category'
+            error['http_status'] = 400
+            return JSONResponse(content=error, status_code=400)
 
     return_list = copy.deepcopy(success_response)
 
@@ -160,10 +160,10 @@ async def _get_png(url):
     bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)" \
                          r"\/circular\/category\/[0-9]+.*\?download=[0-9]+"
     if not re.match(bps_circular_regex, url):
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid URL"
-        )
+        error = copy.deepcopy(error_response)
+        error['error'] = f'Invalid URL'
+        error['http_status'] = 400
+        return JSONResponse(content=error, status_code=400)
 
     res = await get_png(url)
 
@@ -207,9 +207,9 @@ async def _get_circular_images(image_path) -> FileResponse:
                 raise LookupError
 
         except LookupError:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Image not found"
-            )
+            error = copy.deepcopy(error_response)
+            error['error'] = f'Image not found'
+            error['http_status'] = 404
+            return JSONResponse(content=error, status_code=400)
 
     return FileResponse(f"./circularimages/{image_path}")
