@@ -228,14 +228,14 @@ async def get_png(download_url: str) -> str or None:
 
     for page, pgno in zip(pdf, range(len(pdf))):
 
-        pil_image = page.render_topil(
-            scale=5,
-            rotation=0,
-            crop=(0, 0, 0, 0),  # Crop doesn't work for some reason
-            colour=(255, 255, 255, 255),
-            annotations=True,
-            greyscale=False,
-            optimise_mode=pdfium.OptimiseMode.NONE,
+        pil_image = page.render().to_pil(
+            # scale=5,
+            # rotation=0,
+            # crop=(0, 0, 0, 0),  # Crop doesn't work for some reason
+            # colour=(255, 255, 255, 255),
+            # annotations=True,
+            # greyscale=False,
+            # optimise_mode=pdfium.OptimiseMode.NONE,
         )
         # check if the page is empty, by checking if the image is all white
 
