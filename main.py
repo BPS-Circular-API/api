@@ -3,7 +3,6 @@ from data.backend import *
 from data.search_algo import SearchCorpus
 import copy
 import re
-import sqlite3
 from starlette.responses import JSONResponse
 from fastapi.responses import FileResponse
 

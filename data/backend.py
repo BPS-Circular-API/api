@@ -1,13 +1,9 @@
 from logging.config import dictConfig
-import bs4
 import configparser
 import logging
 import os
-import pickle
 import pypdfium2 as pdfium
 import requests
-import threading
-import time
 import sqlite3
 from pydantic import BaseModel
 from bs4 import BeautifulSoup, SoupStrainer
