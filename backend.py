@@ -67,7 +67,15 @@ log = logging.getLogger("bps-circular-api")
 config = configparser.ConfigParser()
 
 try:
-    config.read('./data/config.ini')
+    # check if ./data/config.ini exists
+    if os.path.exists('./data/config.ini'):
+        config.read('data/config.ini')
+    elif os.path.exists('api/data/config.ini'):
+        config.read('api/data/config.ini')
+    elif os.path.exists("../data/config.ini"):
+        config.read("../data/config.ini")
+
+
 except Exception as e:
     print("Error reading the config.ini file. Error: " + str(e))
     exit()
@@ -205,11 +213,16 @@ async def get_png(download_url: str) -> str or None:
 
     pdf_file = requests.get(download_url, headers=headers)
 
+    # we're redirected to https://bpsdoha.com/component/users/ which means the file doesn't exist
+    if pdf_file.url.startswith("https://bpsdoha.com/component/users/"):
+        raise Exception("Circular does not exist")
+
+
     try:
         pdf = pdfium.PdfDocument(pdf_file.content)
     except Exception as e:
         log.error(f"Error parsing PDF. Error: {e}")
-        return None
+        return []
 
     if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
         os.mkdir("./circularimages")
@@ -259,7 +272,13 @@ async def get_png(download_url: str) -> str or None:
 
 async def search_from_id(_id: int):
     # Try to find the circular in the database
-    con = sqlite3.connect("./data/data.db")
+    if os.path.exists(".data/data.db"):
+        con = sqlite3.connect(".data/data.db")
+    elif os.path.exists("../data/data.db"):
+        con = sqlite3.connect("../data/data.db")
+    else:
+        log.error("Could not find database")
+        return None
     cur = con.cursor()
 
     cur.execute("SELECT * FROM list_cache WHERE id=?", (_id,))
@@ -279,6 +298,7 @@ async def search_from_id(_id: int):
 
         # Check if the circular is in the list
         for circular in circular_list:
+            circular['id'] = int(circular['id'])
 
             # If the given id is found on the website, add it to the database and return it
             if circular['id'] == _id:
