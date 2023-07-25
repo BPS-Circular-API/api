@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from data.backend import *
+from backend import *
 from data.search_algo import SearchCorpus
 import copy
 import re
@@ -47,7 +47,7 @@ async def _get_categories():
 
 # Get RAW circular lists
 @app.get("/list")
-async def _get_circular_list(category: str or int):
+async def _get_circular_list(category: str | int):
     # Get the category id from the category name/id provided
     if type(category) == int or category.isdigit():
         category = int(category)
@@ -85,7 +85,7 @@ async def _get_circular_list(category: str or int):
 
 # Get latest circular
 @app.get("/latest")
-async def _get_latest_circular(category: str or int):
+async def _get_latest_circular(category: str | int):
     # Get the category id from the category name/id provided
     if type(category) == int or category.isdigit():
         category = int(category)
@@ -111,7 +111,7 @@ async def _get_latest_circular(category: str or int):
 
 
 @app.get("/search")
-async def _search(query: str or int, amount: int = 3):  # TODO try to make searching by id faster
+async def _search(query: str | int, amount: int = 3):  # TODO try to make searching by id faster
     # check if it is a circular id or title
     if type(query) == int or query.isdigit():
         return_list = copy.deepcopy(success_response)

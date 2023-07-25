@@ -1,6 +1,6 @@
 import itertools
 from rake_nltk import Rake
-from data.backend import log
+from backend import log
 
 
 def _install_stopwords_punkt():
