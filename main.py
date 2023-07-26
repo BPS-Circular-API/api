@@ -104,8 +104,10 @@ async def _get_latest_circular(category: str | int):
         res = await get_latest(category)
         return_list['data'] = res
     except Exception as e:
-        return_list['data'] = "There are no circulars in this category."
-        log.error(e)
+        error = copy.deepcopy(error_response)
+        error['error'] = f'Invalid category'
+        error['http_status'] = 400
+        return JSONResponse(content=error, status_code=400)
 
     return return_list
 
@@ -120,9 +122,12 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
         if res is not None:
             return_list['data'] = [res]
         else:
-            return_list['data'] = None
+            return_list['data'] = []
 
         return return_list
+
+    if amount < 1:
+        amount = 3
 
     # If title is a circular title, get a list of all circulars by scraping the website
     mega_list = []
@@ -164,7 +169,13 @@ async def _get_png(url):
         error['http_status'] = 400
         return JSONResponse(content=error, status_code=400)
 
-    res = await get_png(url)
+    try:
+        res = await get_png(url)
+    except Exception as e:
+        error = copy.deepcopy(error_response)
+        error['error'] = f'Invalid URL'
+        error['http_status'] = 400
+        return JSONResponse(content=error, status_code=400)
 
     return_list = copy.deepcopy(success_response)
     # noinspection PyTypedDict
