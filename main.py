@@ -10,7 +10,6 @@ app = FastAPI(
     title="BPS Circular API",
     description="An API that can work with the circulars of Birla Public School",
     version="1.0.0",
-    # docs_url="../docs",
 )
 
 
@@ -61,7 +60,6 @@ async def _get_circular_list(category: str | int):
             return JSONResponse(content=error, status_code=400)
 
     # Get the number of pages in the category
-
     num_pages = await get_num_pages(category)
 
     if num_pages == 0:
@@ -133,13 +131,17 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
     mega_list = []
     for i in categories.keys():
         mega_list += await get_list(categories[i], await get_num_pages(categories[i]))
-    all_titles = [circular['title'] for circular in mega_list if circular['title'] is not None]
+    all_titles = [circular['title'].strip() for circular in mega_list if circular['title'] is not None]
+
+    print(all_titles)
 
     # Create a corpus of all the titles, and search
     corpus = SearchCorpus()
 
-    for t in mega_list:
-        corpus.add_(t['title'])
+    for t in all_titles:
+        print(t)
+        corpus.add_(t)
+    print(query)
     res = corpus.search(query, amount=amount)
 
     return_list = copy.deepcopy(success_response)
@@ -147,6 +149,8 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
     if res is None:
         return_list['data'] = None
         return return_list
+
+    print(res)
 
     # find the index of the title in mega_list['title'] and return the whole circular
     circulars = [
@@ -187,7 +191,6 @@ async def _get_png(url):
 @app.get("/circular-image/{image_path}")
 async def _get_circular_images(image_path) -> FileResponse:
     # return ./cicularimages/{image_path} as an image
-
     if not os.path.exists(f"./circularimages/{image_path}"):
 
         try:
