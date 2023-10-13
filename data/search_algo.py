@@ -37,8 +37,6 @@ class SearchCorpus:
                 self.keywords = model.extract_keywords_from_text(sentence)
                 self.ranked_phrases = set(model.get_ranked_phrases_with_scores())
 
-
-
         def __str__(self):
             return f"Sentence: {self.sentence}\nKeywords: {self.keywords}\nRanked Phrases: {self.ranked_phrases}"
 
@@ -47,20 +45,21 @@ class SearchCorpus:
 
     def add_(self, sentence):
         self.corpus.append(self.Sentence(sentence, self.r))
+        print(len(self.corpus))
 
-    def search(self, q, amount=1) -> list or None:
+    def search(self, query, amount=1) -> list or None:
         try:
-            q = q.lower()
+            query = query.lower()
 
-            q = q.replace("class", "grade")
-            q = q.replace("periodic test", "pt")
+            # query = query.replace("class", "grade")
+            # query = query.replace("periodic test", "pt")
 
             list_of_roman = ["i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x", "xi", "xii"]
-            for i in range(len(q.split(" "))):
-                if q.split(" ")[i - 1] != "pt" and q.split(" ")[i].isdigit():
-                    q = q.replace(str(q.split(" ")[i]), list_of_roman[int(q.split(" ")[i]) - 1])
+            # for i in range(len(query.split(" "))):
+            #     if query.split(" ")[i - 1] != "pt" and query.split(" ")[i].isdigit():
+            #         query = query.replace(str(query.split(" ")[i]), list_of_roman[int(query.split(" ")[i]) - 1])
 
-            self.r.extract_keywords_from_text(q)
+            self.r.extract_keywords_from_text(query)
             keyword = set(self.r.get_ranked_phrases_with_scores())
 
             results = []
@@ -81,6 +80,7 @@ class SearchCorpus:
                             results.append([2, corp])
 
             results = sorted(results, key=lambda x: x[0], reverse=True)
+
 
             return [a[1].raw for a in results[:amount]]
 
