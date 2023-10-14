@@ -327,10 +327,30 @@ async def search_from_id(_id: int):
     return None
 
 
-async def search_algo(query: str, amount: int, all_circular_objects):
+async def refresh_all_circular_objects():
+    global all_circular_objects
+    all_circular_objects[0] = []
+    # expire in 6 hours
+    all_circular_objects[1] = int(time.time()) + 21600
+    for i in categories.keys():
+        all_circular_objects[0] += await get_list(categories[i], await get_num_pages(categories[i]))
+    return all_circular_objects
+
+
+# index 0 is the list of all circulars, index 1 is the expiry epoch
+all_circular_objects = [[], 0]
+
+
+async def search_algo(query: str, amount: int):
+    if all_circular_objects[1] == 0 or all_circular_objects[1] < int(time.time()):
+        circular_objs: list = (await refresh_all_circular_objects())[0]
+        print(circular_objs)
+    else:
+        circular_objs = all_circular_objects[0]
+
     search_results = []
     query = query.lower()
-    circulars_lower = [circular_title['title'].lower() for circular_title in all_circular_objects]
+    circulars_lower = [circular_title['title'].lower() for circular_title in circular_objs]
 
     # Initialize the stemmer and stop words
     stemmer = PorterStemmer()
@@ -357,8 +377,8 @@ async def search_algo(query: str, amount: int, all_circular_objects):
     search_results.sort(key=lambda x: (-x[2], x[0]))
 
     if search_results[0][1] == query:
-        return [all_circular_objects[search_results[0][0]]]
+        return [circular_objs[search_results[0][0]]]
 
     # Otherwise, return up to 'amount' results
-    results = [all_circular_objects[result[0]] for result in search_results[:amount]]
+    results = [circular_objs[result[0]] for result in search_results[:amount]]
     return results

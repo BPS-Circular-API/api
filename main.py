@@ -128,11 +128,7 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
         amount = 3
 
     # If title is a circular title, get a list of all circulars by scraping the website
-    mega_list = []
-    for i in categories.keys():
-        mega_list += await get_list(categories[i], await get_num_pages(categories[i]))
-
-    res = await search_algo(query, amount, mega_list)
+    res = await search_algo(query, amount)
 
     return_list = copy.deepcopy(success_response)
 
