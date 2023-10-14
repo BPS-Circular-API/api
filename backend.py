@@ -1,3 +1,4 @@
+import difflib
 from logging.config import dictConfig
 import configparser
 import logging
@@ -8,6 +9,19 @@ import sqlite3
 from pydantic import BaseModel
 from bs4 import BeautifulSoup, SoupStrainer
 from concurrent.futures import ThreadPoolExecutor
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+
+try:
+    nltk.data.find('tokenizers/punkt')
+except LookupError:
+    nltk.download('punkt')
+
+try:
+    nltk.data.find('corpora/stopwords')
+except LookupError:
+    nltk.download('stopwords')
 
 success_response = {
     "status": "success",
@@ -103,6 +117,7 @@ log.debug(f"Log level set to {log.level}")
 
 # remove trailing slash from base_api_url
 base_api_url = base_api_url.rstrip('/')
+
 
 #
 #
@@ -217,7 +232,6 @@ async def get_png(download_url: str) -> str or None:
     if pdf_file.url.startswith("https://bpsdoha.com/component/users/"):
         raise Exception("Circular does not exist")
 
-
     try:
         pdf = pdfium.PdfDocument(pdf_file.content)
     except Exception as e:
@@ -311,3 +325,40 @@ async def search_from_id(_id: int):
                 return circular
 
     return None
+
+
+async def search_algo(query: str, amount: int, all_circular_objects):
+    search_results = []
+    query = query.lower()
+    circulars_lower = [circular_title['title'].lower() for circular_title in all_circular_objects]
+
+    # Initialize the stemmer and stop words
+    stemmer = PorterStemmer()
+    stop_words = set(stopwords.words("english"))
+
+    keyword_stem = stemmer.stem(query)
+
+    for index, circular in enumerate(circulars_lower):
+        circular_tokens = nltk.word_tokenize(circular.lower())
+
+        # Apply stemming and remove stop words
+        circular_filtered = [stemmer.stem(word) for word in circular_tokens if word not in stop_words]
+        circular_filtered = " ".join(circular_filtered)
+
+        # Check for exact word matches first
+        if keyword_stem in circular_filtered:
+            search_results.append((index, circular, 1.0))
+        else:
+            # If no exact word match, calculate similarity for partial sentence matches
+            similarity = difflib.SequenceMatcher(None, keyword_stem, circular_filtered).ratio()
+            search_results.append((index, circular, similarity))
+
+    # Sort the search results by similarity and index
+    search_results.sort(key=lambda x: (-x[2], x[0]))
+
+    if search_results[0][1] == query:
+        return [all_circular_objects[search_results[0][0]]]
+
+    # Otherwise, return up to 'amount' results
+    results = [all_circular_objects[result[0]] for result in search_results[:amount]]
+    return results
