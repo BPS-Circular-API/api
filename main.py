@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from backend import *
-from data.search_algo import SearchCorpus
 import copy
 import re
 from starlette.responses import JSONResponse
 from fastapi.responses import FileResponse
+from backend import search_algo
 
 app = FastAPI(
     title="BPS Circular API",
@@ -131,18 +131,8 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
     mega_list = []
     for i in categories.keys():
         mega_list += await get_list(categories[i], await get_num_pages(categories[i]))
-    all_titles = [circular['title'].strip() for circular in mega_list if circular['title'] is not None]
 
-    print(all_titles)
-
-    # Create a corpus of all the titles, and search
-    corpus = SearchCorpus()
-
-    for t in all_titles:
-        print(t)
-        corpus.add_(t)
-    print(query)
-    res = corpus.search(query, amount=amount)
+    res = await search_algo(query, amount, mega_list)
 
     return_list = copy.deepcopy(success_response)
 
@@ -150,16 +140,8 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
         return_list['data'] = None
         return return_list
 
-    print(res)
-
-    # find the index of the title in mega_list['title'] and return the whole circular
-    circulars = [
-        mega_list[all_titles.index(i)] for i in res
-    ]
-
-    # res = get_download_url(res)
     if res is not None:
-        return_list['data'] = circulars
+        return_list['data'] = res
     return return_list
 
 
