@@ -1,4 +1,5 @@
 import difflib
+import time
 from logging.config import dictConfig
 import configparser
 import logging
@@ -83,7 +84,7 @@ config = configparser.ConfigParser()
 try:
     # check if ./data/config.ini exists
     if os.path.exists('./data/config.ini'):
-        config.read('data/config.ini')
+        config.read('./data/config.ini')
     elif os.path.exists('api/data/config.ini'):
         config.read('api/data/config.ini')
     elif os.path.exists("../data/config.ini"):
@@ -228,7 +229,7 @@ async def get_png(download_url: str) -> str or None:
 
     pdf_file = requests.get(download_url, headers=headers)
 
-    # we're redirected to https://bpsdoha.com/component/users/ which means the file doesn't exist
+    # if we're redirected to https://bpsdoha.com/component/users/ it means the file doesn't exist
     if pdf_file.url.startswith("https://bpsdoha.com/component/users/"):
         raise Exception("Circular does not exist")
 
@@ -285,11 +286,14 @@ async def get_png(download_url: str) -> str or None:
 
 
 async def search_from_id(_id: int):
+    _id = int(_id)
     # Try to find the circular in the database
     if os.path.exists(".data/data.db"):
         con = sqlite3.connect(".data/data.db")
     elif os.path.exists("../data/data.db"):
         con = sqlite3.connect("../data/data.db")
+    elif os.path.exists("data/data.db"):
+        con = sqlite3.connect("data/data.db")
     else:
         log.error("Could not find database")
         return None
@@ -305,6 +309,7 @@ async def search_from_id(_id: int):
 
     # If the circular is not found in the database, scrape the website
     for category in categories:
+        log.debug(f"Searching in category {category}, id {categories[category]}")
         category_id = categories[category]
 
         # Get the list of circulars

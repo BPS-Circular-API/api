@@ -114,6 +114,7 @@ async def _get_latest_circular(category: str | int):
 async def _search(query: str | int, amount: int = 3):  # TODO try to make searching by id faster
     # check if it is a circular id or title
     if type(query) == int or query.isdigit():
+        log.debug("Searching by id")
         return_list = copy.deepcopy(success_response)
         res = await search_from_id(query)
 
@@ -167,34 +168,40 @@ async def _get_png(url):
 
 
 @app.get("/circular-image/{image_path}")
-async def _get_circular_images(image_path) -> FileResponse:
+async def _get_circular_images(image_path) -> JSONResponse:
     # return ./cicularimages/{image_path} as an image
     if not os.path.exists(f"./circularimages/{image_path}"):
+        print(image_path)
 
         try:
             # If the imagepath is a circular id with .png extension
             if image_path[:4].isdigit() and image_path.endswith(".png"):
                 # if image is referring to not first page of circular
                 if "-" in image_path:
+                    log.debug("Image is not first page of circular")
                     raise LookupError
 
                 # try to get the circular
                 res = await search_from_id(image_path[:4])
                 if res is None:
+                    log.debug("Circular not found")
                     raise LookupError
 
                 # Try to get the image
                 res = await get_png(res['link'])
                 if res is None:
+                    log.debug("Image not found")
                     raise LookupError
 
                 # if the image exists now
                 if os.path.exists(f"./circularimages/{image_path}"):
                     return FileResponse(f"./circularimages/{image_path}")
                 else:
+                    log.debug("Image still not found")
                     raise LookupError
 
             else:
+                log.debug("invalid image path")
                 raise LookupError
 
         except LookupError:
