@@ -349,7 +349,6 @@ all_circular_objects = [[], 0]
 async def search_algo(query: str, amount: int):
     if all_circular_objects[1] == 0 or all_circular_objects[1] < int(time.time()):
         circular_objs: list = (await refresh_all_circular_objects())[0]
-        print(circular_objs)
     else:
         circular_objs = all_circular_objects[0]
 

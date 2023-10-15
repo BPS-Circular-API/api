@@ -171,8 +171,7 @@ async def _get_png(url):
 async def _get_circular_images(image_path) -> JSONResponse:
     # return ./cicularimages/{image_path} as an image
     if not os.path.exists(f"./circularimages/{image_path}"):
-        print(image_path)
-
+    
         try:
             # If the imagepath is a circular id with .png extension
             if image_path[:4].isdigit() and image_path.endswith(".png"):
