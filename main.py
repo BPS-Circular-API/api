@@ -4,7 +4,6 @@ import copy
 import re
 from starlette.responses import JSONResponse
 from fastapi.responses import FileResponse
-from backend import search_algo
 
 app = FastAPI(
     title="BPS Circular API",
@@ -130,7 +129,6 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
 
     # If title is a circular title, get a list of all circulars by scraping the website
     res = await search_algo(query, amount)
-
     return_list = copy.deepcopy(success_response)
 
     if res is None:
