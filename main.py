@@ -45,9 +45,10 @@ async def _get_categories():
 
 # Get RAW circular lists
 @app.get("/list")
+@app.get("/list/{category}")
 async def _get_circular_list(category: str | int):
     # Get the category id from the category name/id provided
-    if type(category) == int or category.isdigit():
+    if type(category) is int or category.isdigit():
         category = int(category)
     else:
         category = categories.get(category.lower())
@@ -82,6 +83,7 @@ async def _get_circular_list(category: str | int):
 
 # Get latest circular
 @app.get("/latest")
+@app.get("/latest/{category}")
 async def _get_latest_circular(category: str | int):
     # Get the category id from the category name/id provided
     if type(category) == int or category.isdigit():
@@ -110,6 +112,7 @@ async def _get_latest_circular(category: str | int):
 
 
 @app.get("/search")
+@app.get("/search/{query}")
 async def _search(query: str | int, amount: int = 3):  # TODO try to make searching by id faster
     # check if it is a circular id or title
     if type(query) == int or query.isdigit():
@@ -141,6 +144,7 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
 
 
 @app.get("/getpng")
+@app.get("/getpng/{url}")
 async def _get_png(url):
     bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)" \
                          r"\/circular\/category\/[0-9]+.*\?download=[0-9]+"
@@ -167,13 +171,13 @@ async def _get_png(url):
 
 @app.get("/circular-image/{image_path}")
 async def _get_circular_images(image_path) -> JSONResponse:
-    # return ./cicularimages/{image_path} as an image
+    # return ./circularimages/{image_path} as an image
     if not os.path.exists(f"./circularimages/{image_path}"):
     
         try:
             # If the imagepath is a circular id with .png extension
             if image_path[:4].isdigit() and image_path.endswith(".png"):
-                # if image is referring to not first page of circular
+                # if image is not referring to first page of circular
                 if "-" in image_path:
                     log.debug("Image is not first page of circular")
                     raise LookupError
