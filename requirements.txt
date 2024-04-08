@@ -6,4 +6,4 @@ rake_nltk==1.0.6
 requests==2.31.0
 uvicorn==0.23.1
 lxml==4.9.3
-pillow==10.0.0
+pillow==10.3.0
