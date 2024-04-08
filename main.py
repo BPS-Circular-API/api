@@ -144,7 +144,6 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
 
 
 @app.get("/getpng")
-@app.get("/getpng/{url}")
 async def _get_png(url):
     bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)" \
                          r"\/circular\/category\/[0-9]+.*\?download=[0-9]+"
@@ -173,7 +172,7 @@ async def _get_png(url):
 async def _get_circular_images(image_path) -> JSONResponse:
     # return ./circularimages/{image_path} as an image
     if not os.path.exists(f"./circularimages/{image_path}"):
-    
+
         try:
             # If the imagepath is a circular id with .png extension
             if image_path[:4].isdigit() and image_path.endswith(".png"):
