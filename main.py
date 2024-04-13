@@ -56,8 +56,8 @@ async def _get_circular_list(category: str | int):
         if category is None:
             error = copy.deepcopy(error_response)
             error['error'] = f'Invalid category'
-            error['http_status'] = 400
-            return JSONResponse(content=error, status_code=400)
+            error['http_status'] = 422
+            return JSONResponse(content=error, status_code=422)
 
     # Get the number of pages in the category
     num_pages = await get_num_pages(category)
@@ -65,8 +65,8 @@ async def _get_circular_list(category: str | int):
     if num_pages == 0:
         error = copy.deepcopy(error_response)
         error['error'] = f'Invalid category'
-        error['http_status'] = 400
-        return JSONResponse(content=error, status_code=400)
+        error['http_status'] = 422
+        return JSONResponse(content=error, status_code=422)
 
     # Get the circular list
     res = await get_list(category, num_pages)
@@ -86,27 +86,31 @@ async def _get_circular_list(category: str | int):
 @app.get("/latest/{category}")
 async def _get_latest_circular(category: str | int):
     # Get the category id from the category name/id provided
-    if type(category) == int or category.isdigit():
+    if type(category) is int or category.isdigit():
         category = int(category)
     else:
         category = categories.get(category.lower())
 
         if category is None:
+            log.debug("Category is none, 400'ing")
+
             error = copy.deepcopy(error_response)
             error['error'] = f'Invalid category'
-            error['http_status'] = 400
-            return JSONResponse(content=error, status_code=400)
+            error['http_status'] = 422
+
+            return JSONResponse(content=error, status_code=422)
 
     return_list = copy.deepcopy(success_response)
 
     try:
         res = await get_latest(category)
         return_list['data'] = res
+
     except Exception as e:
         error = copy.deepcopy(error_response)
         error['error'] = f'Invalid category'
-        error['http_status'] = 400
-        return JSONResponse(content=error, status_code=400)
+        error['http_status'] = 422
+        return JSONResponse(content=error, status_code=422)
 
     return return_list
 
@@ -152,19 +156,18 @@ async def _get_png(url):
     if not re.match(circular_pdf_regex, url) and not re.match(primary_circular_pdf_regex, url):
         error = copy.deepcopy(error_response)
         error['error'] = f'Invalid URL'
-        error['http_status'] = 400
-        return JSONResponse(content=error, status_code=400)
+        error['http_status'] = 422
+        return JSONResponse(content=error, status_code=422)
 
     try:
         res = await get_png(url)
     except Exception as e:
         error = copy.deepcopy(error_response)
-        error['error'] = f'Invalid URL'
+        error['error'] = f'Error while attempting to get the PNG'
         error['http_status'] = 400
         return JSONResponse(content=error, status_code=400)
 
     return_list = copy.deepcopy(success_response)
-    # noinspection PyTypedDict
     return_list['data'] = res
 
     return return_list
@@ -210,6 +213,6 @@ async def _get_circular_images(image_path) -> JSONResponse:
             error = copy.deepcopy(error_response)
             error['error'] = f'Image not found'
             error['http_status'] = 404
-            return JSONResponse(content=error, status_code=400)
+            return JSONResponse(content=error, status_code=404)
 
     return FileResponse(f"./circularimages/{image_path}")

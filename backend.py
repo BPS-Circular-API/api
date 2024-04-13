@@ -315,6 +315,7 @@ async def search_from_id(_id: int):
     else:
         log.error("Could not find database")
         return None
+
     cur = con.cursor()
 
     cur.execute("SELECT * FROM list_cache WHERE id=?", (_id,))
@@ -353,8 +354,10 @@ async def search_from_id(_id: int):
 async def refresh_all_circular_objects():
     global all_circular_objects
     all_circular_objects[0] = []
+
     # expire in 6 hours
     all_circular_objects[1] = int(time.time()) + 21600
+
     for i in categories.keys():
         all_circular_objects[0] += await get_list(categories[i], await get_num_pages(categories[i]))
     return all_circular_objects
