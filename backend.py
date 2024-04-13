@@ -42,6 +42,7 @@ headers = {
 }
 
 bps_url = "https://bpsdoha.com"
+category_id_prefixes = ["circular/category", "primaryi"]
 
 
 # Initializing the Logger
@@ -104,8 +105,11 @@ try:
 
     # make sure all the values are integers
     for category in categories.keys():
-        categories[category] = int(categories[category])
-
+        try:
+            categories[category] = int(categories[category])
+        except ValueError:
+            categories[category] = categories[category]
+            log.debug("Couldn't int() a category. Must be textual")
     log.debug(categories)
 
 except Exception as err:
@@ -128,7 +132,10 @@ base_api_url = base_api_url.rstrip('/')
 
 
 async def get_num_pages(category_id):
-    url = f'{bps_url}/circular/category/{category_id}'
+    if type(category_id) is int:
+        url = f"{bps_url}/{category_id_prefixes[0]}/{category_id}"
+    else:
+        url = f"{bps_url}/{category_id_prefixes[1]}/{category_id}"
 
     response = requests.get(url, headers=headers)
 
@@ -154,19 +161,25 @@ async def get_num_pages(category_id):
 
 
 def thread_get_list(category_id, page):
-    url = f'{bps_url}/circular/category/{category_id}?start={(page - 1) * 20}'
+    if type(category_id) is int:
+        url = f"{bps_url}/{category_id_prefixes[0]}/{category_id}"
+    else:
+        url = f"{bps_url}/{category_id_prefixes[1]}/{category_id}"
+
+    url += f"?start={(page - 1) * 20}"
 
     response = requests.get(url, headers=headers)
 
     soup = BeautifulSoup(response.content, 'html.parser')
-
     fileboxes = soup.find_all('div', class_='pd-filebox')
 
     files = []
+
     for filebox in fileboxes:
         name = filebox.find('div', class_='pd-title').text
         url = bps_url + filebox.find('a', class_='btn-success')['href'].split(':')[0]
         id_ = url.split('=')[1].split(':')[0]
+
         files.append({'title': name, 'link': url, 'id': id_})
 
     return files
@@ -191,7 +204,11 @@ async def get_list(category_id, pages):
 
 
 async def get_latest(category_id):
-    url = f"{bps_url}/circular/category/{category_id}"
+    if type(category_id) is int:
+        url = f"{bps_url}/{category_id_prefixes[0]}/{category_id}"
+    else:
+        url = f"{bps_url}/{category_id_prefixes[1]}/{category_id}"
+
     response = requests.get(url, headers=headers)
 
     # Parse the response
@@ -287,6 +304,7 @@ async def get_png(download_url: str) -> str or None:
 
 async def search_from_id(_id: int):
     _id = int(_id)
+
     # Try to find the circular in the database
     if os.path.exists(".data/data.db"):
         con = sqlite3.connect(".data/data.db")

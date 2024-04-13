@@ -145,9 +145,11 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
 
 @app.get("/getpng")
 async def _get_png(url):
-    bps_circular_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)" \
+    circular_pdf_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)" \
                          r"\/circular\/category\/[0-9]+.*\?download=[0-9]+"
-    if not re.match(bps_circular_regex, url):
+    primary_circular_pdf_regex = (r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)"
+                                  r"\/primaryi\/primary-circular\?download=[0-9]+")
+    if not re.match(circular_pdf_regex, url) and not re.match(primary_circular_pdf_regex, url):
         error = copy.deepcopy(error_response)
         error['error'] = f'Invalid URL'
         error['http_status'] = 400
