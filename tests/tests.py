@@ -51,6 +51,17 @@ class CircularLatest(unittest.TestCase):
         self.assertNotEqual(val['data']['link'], "")
         self.assertNotEqual(val['data']['id'], "")
 
+    def test_id_less_category(self):
+        val = asyncio.run(_get_latest_circular("primary"))
+
+        self.assertEqual(val["status"], "success")
+        self.assertEqual(val["http_status"], 200)
+        self.assertEqual(type(val), dict)
+
+        self.assertNotEqual(val['data']['title'], "")
+        self.assertNotEqual(val['data']['link'], "")
+        self.assertNotEqual(val['data']['id'], "")
+
     def test_invalid_category(self):
         val = asyncio.run(_get_latest_circular("invalid"))
 
