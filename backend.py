@@ -176,9 +176,9 @@ def thread_get_list(category_id, page):
     files = []
 
     for filebox in fileboxes:
-        name = filebox.find('div', class_='pd-title').text
-        url = bps_url + filebox.find('a', class_='btn-success')['href'].split(':')[0]
-        id_ = url.split('=')[1].split(':')[0]
+        name = filebox.find('div', class_='pd-title').text.strip()
+        url = bps_url + filebox.find('a', class_='btn-success')['href'].split(':')[0].strip()
+        id_ = url.split('=')[1].split(':')[0].strip()
 
         files.append({'title': name, 'link': url, 'id': id_})
 
@@ -216,9 +216,9 @@ async def get_latest(category_id):
     soup = BeautifulSoup(response.content, 'lxml', parse_only=parse_only)
 
     # Find the first filebox and get the name and url
-    name = soup.find('div', class_='pd-title').text
-    url = bps_url + soup.find('a', class_='btn-success')['href'].split(':')[0]
-    id_ = url.split('=')[1].split(':')[0]
+    name = soup.find('div', class_='pd-title').text.strip()
+    url = bps_url + soup.find('a', class_='btn-success')['href'].split(':')[0].strip()
+    id_ = url.split('=')[1].split(':')[0].strip()
 
     return {'title': name, 'link': url, 'id': id_}
 
@@ -374,8 +374,9 @@ async def search_algo(query: str, amount: int):
         circular_objs = all_circular_objects[0]
 
     search_results = []
-    query = query.lower()
+    query = query.lower().replace("-", "").replace("&", "")
     circulars_lower = [circular_title['title'].lower() for circular_title in circular_objs]
+    circulars_lower = [circular_title.replace("&", '').replace("-", "") for circular_title in circulars_lower]
 
     # Initialize the stemmer and stop words
     stemmer = PorterStemmer()
