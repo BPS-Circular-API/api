@@ -149,6 +149,7 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
 
 
 @app.get("/getpng")
+@app.get("/get-png")
 async def _get_png(url):
     circular_pdf_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)" \
                          r"\/circular\/category\/[0-9]+.*\?download=[0-9]+"
@@ -220,20 +221,24 @@ async def _get_circular_images(image_path) -> JSONResponse:
 
 
 @app.get("/new-circulars/{circular_id}")
-async def new_circulars(circular_id: int):
+async def _new_circulars(circular_id: int):
     """Returns the circulars succeeding the given one."""
     if circular_list_cache.expiry < time.time():
         circular_list = await circular_list_cache.refresh_circulars()
     else:
         circular_list = circular_list_cache.cache
 
-    passed_circular_index = -1
     for index in range(len(circular_list)):
         if circular_list[index]['id'] == str(circular_id):
             passed_circular_index = index
             break
     else:
-        # todo raise error; circular not found
-        raise Exception
+        error = copy.deepcopy(error_response)
+        error['error'] = f'Circular ID does not exist'
+        error['http_status'] = 422
+        return JSONResponse(content=error, status_code=422)
 
-    return circular_list[:passed_circular_index]
+    return_list = copy.deepcopy(success_response)
+    return_list['data'] = circular_list[:passed_circular_index]
+
+    return return_list

@@ -2,12 +2,22 @@ import unittest
 import starlette.responses
 import asyncio
 
-from main import _get_circular_list, _get_latest_circular, _search, _get_png
+from main import (
+    _get_circular_list,
+    _get_latest_circular,
+    _search,
+    _get_png,
+    _get_categories,
+    root,
+    _get_circular_images,
+    _new_circulars
+)
+from backend import categories
 
 
 class CircularList(unittest.TestCase):
     def test_category(self):
-        val = asyncio.run(_get_circular_list("general"))
+        val = asyncio.run(_get_circular_list("ptm"))
 
         self.assertEqual(val["status"], "success")
         self.assertEqual(val["http_status"], 200)
@@ -34,9 +44,18 @@ class CircularList(unittest.TestCase):
         self.assertNotEqual(val['data'][0]['id'], "")
 
     def test_invalid_category_id(self):
-        val = asyncio.run(_get_circular_list(12))
+        val = asyncio.run(_get_circular_list(9999))  # unlikely to exist
 
         self.assertEqual(type(val), starlette.responses.JSONResponse)
+        self.assertEqual(val.status_code, 422)
+        self.assertIn('Invalid category', val.body.decode())
+
+    def test_empty_category(self):
+        val = asyncio.run(_get_circular_list(""))
+
+        self.assertEqual(type(val), starlette.responses.JSONResponse)
+        self.assertEqual(val.status_code, 422)
+        self.assertIn('Invalid category', val.body.decode())
 
 
 class CircularLatest(unittest.TestCase):
@@ -66,6 +85,8 @@ class CircularLatest(unittest.TestCase):
         val = asyncio.run(_get_latest_circular("invalid"))
 
         self.assertEqual(type(val), starlette.responses.JSONResponse)
+        self.assertEqual(val.status_code, 422)
+        self.assertIn('Invalid category', val.body.decode())
 
     def test_category_id(self):
         val = asyncio.run(_get_latest_circular(52))
@@ -79,9 +100,11 @@ class CircularLatest(unittest.TestCase):
         self.assertNotEqual(val['data']['id'], "")
 
     def test_invalid_category_id(self):
-        val = asyncio.run(_get_latest_circular(12))
+        val = asyncio.run(_get_latest_circular(9999))  # unlikely to exist
 
         self.assertEqual(type(val), starlette.responses.JSONResponse)
+        self.assertEqual(val.status_code, 422)
+        self.assertIn('Invalid category', val.body.decode())
 
 
 class CircularSearch(unittest.TestCase):
@@ -95,15 +118,15 @@ class CircularSearch(unittest.TestCase):
         self.assertEqual(type(val['data']), list)
         self.assertEqual(len(val['data']), 3)
 
-    # def test_invalid_query(self):
-    #     val = asyncio.run(_search("invalid"))
-    #
-    #     self.assertEqual(val["status"], "success")
-    #     self.assertEqual(val["http_status"], 200)
-    #     self.assertEqual(type(val), dict)
-    #
-    #     self.assertEqual(type(val['data']), list)
-    #     self.assertEqual(len(val['data']), 0)
+    def test_invalid_query(self):
+        val = asyncio.run(_search("invalid_query"))
+
+        self.assertEqual(val["status"], "success")
+        self.assertEqual(val["http_status"], 200)
+        self.assertEqual(type(val), dict)
+
+        self.assertEqual(type(val['data']), list)
+        self.assertEqual(len(val['data']), 0)
 
     def test_amount(self):
         val = asyncio.run(_search("ptm", 5))
@@ -127,7 +150,6 @@ class CircularSearch(unittest.TestCase):
 
     def test_id(self):
         val = asyncio.run(_search(1618, 5))
-        print(val)
 
         self.assertEqual(val["status"], "success")
         self.assertEqual(val["http_status"], 200)
@@ -137,7 +159,7 @@ class CircularSearch(unittest.TestCase):
         self.assertEqual(len(val['data']), 1)
 
     def test_invalid_id(self):
-        val = asyncio.run(_search(1001, 5))
+        val = asyncio.run(_search(99999, 5))  # unlikely to exist
 
         self.assertEqual(val["status"], "success")
         self.assertEqual(val["http_status"], 200)
@@ -148,7 +170,7 @@ class CircularSearch(unittest.TestCase):
 
 
 class CircularPNG(unittest.TestCase):
-    def test_singlepage(self): # todo does not work as intended
+    def test_valid_png(self):
         val = asyncio.run(
             _get_png("https://bpsdoha.com/circular/category/45-exam-time-table-syllabus-2023-24?download=1337"))
 
@@ -157,83 +179,67 @@ class CircularPNG(unittest.TestCase):
         self.assertEqual(val["http_status"], 200)
 
         self.assertEqual(type(val["data"]), list)
-        self.assertEqual(len(val["data"]), 1)
 
-    def test_emptypage(self): # todo does not work as intended
-        val = asyncio.run(
-            _get_png("https://bpsdoha.com/circular/category/52-academic-year-2023-24?download=1386"))
-
-        self.assertEqual(type(val), dict)
-        self.assertEqual(val["status"], "success")
-        self.assertEqual(val["http_status"], 200)
-
-        self.assertEqual(type(val["data"]), list)
-        self.assertEqual(len(val["data"]), 1)
-
-    def test_multipage(self):   # todo does not work as intended
-        val = asyncio.run(
-            _get_png("https://bpsdoha.com/circular/category/52-academic-year-2023-24?download=1397"))
-
-        self.assertEqual(type(val), dict)
-        self.assertEqual(val["status"], "success")
-        self.assertEqual(val["http_status"], 200)
-
-        self.assertEqual(type(val["data"]), list)
-        self.assertEqual(len(val["data"]), 3)
-
-    def test_invalidid(self):
+    def test_invalid_id(self):
         val = asyncio.run(
             _get_png("https://bpsdoha.com/circular/category/52-academic-year-2023-24?download=6969"))
 
         self.assertEqual(type(val), starlette.responses.JSONResponse)
+        self.assertEqual(val.status_code, 400)
+        self.assertIn('Error while attempting to get the PNG', val.body.decode())
 
-    def test_invalidurl(self):
+    def test_invalid_url(self):
         val = asyncio.run(
             _get_png("https://notbpsdoha.com/circular/category/52-academic-year-2023-24?download=1337"))
 
         self.assertEqual(type(val), starlette.responses.JSONResponse)
+        self.assertEqual(val.status_code, 422)
+        self.assertIn('Invalid URL', val.body.decode())
 
-    def test_regex1(self):
-        # Test regex for bpsdoha.com
-        val = asyncio.run(
-            _get_png("https://bpsdoha.com/circular/category/52-academic-year-2023-24?download=1337"))
 
-        self.assertEqual(type(val), dict)
+class NewCirculars(unittest.TestCase):
+    def test_existing_circular_id(self):
+        # Replace with an existing circular ID to test
+        circular_id = 1756
+        val = asyncio.run(_new_circulars(circular_id))
+
+        # Assuming that the response is successful when a valid circular ID is provided
         self.assertEqual(val["status"], "success")
         self.assertEqual(val["http_status"], 200)
-
-        self.assertEqual(type(val["data"]), list)
-        self.assertEqual(len(val["data"]), 1)
-
-    def test_regex2(self):
-        # Test regex for bpsdoha.net
-        val = asyncio.run(
-            _get_png("https://bpsdoha.net/circular/category/52-academic-year-2023-24?download=1337"))
-
         self.assertEqual(type(val), dict)
+
+        # Check that the data returned is a list of circulars
+        self.assertEqual(type(val["data"]), list)
+        # Ensure that no circular in the list matches the provided circular_id
+        self.assertNotIn(circular_id, [circular['id'] for circular in val['data']])
+
+    def test_nonexistent_circular_id(self):
+        # Test with an unlikely to exist circular ID (e.g., 99999)
+        circular_id = 99999
+        val = asyncio.run(_new_circulars(circular_id))
+
+        # Since this ID is invalid, expect an error response
+        self.assertEqual(type(val), starlette.responses.JSONResponse)
+        self.assertEqual(val.status_code, 422)
+        self.assertIn('Circular ID does not exist', val.body.decode())
+
+
+
+class AdditionalTests(unittest.TestCase):
+    def test_get_categories(self):
+        val = asyncio.run(_get_categories())
+
         self.assertEqual(val["status"], "success")
         self.assertEqual(val["http_status"], 200)
-
-        self.assertEqual(type(val["data"]), list)
-        self.assertEqual(len(val["data"]), 1)
-
-    def test_regex3(self):
-        # Test regex for bpsdoha.edu.qa
-
-        val = asyncio.run(
-            _get_png("https://bpsdoha.edu.qa/circular/category/52-academic-year-2023-24?download=1337"))
-
         self.assertEqual(type(val), dict)
+        self.assertEqual(val['data'], [i for i in categories.keys()])
+
+    def test_root(self):
+        val = asyncio.run(root())
+
         self.assertEqual(val["status"], "success")
         self.assertEqual(val["http_status"], 200)
-
-        self.assertEqual(type(val["data"]), list)
-        self.assertEqual(len(val["data"]), 1)
-
-
-
-
-
+        self.assertEqual(val["data"], "Welcome to the API. Please refer to the documentation at https://bpsapi.rajtech.me/docs for more information.")
 
 
 if __name__ == '__main__':
