@@ -361,11 +361,13 @@ class CircularListCache:
 
         # We don't write to cache directly because we don't want other functions being affected by empty/incomplete
         # cache for the duration of get_list()
-        temp_list = []
+        temp_list: list = []
         for i in categories.keys():
             temp_list += await get_list(categories[i], await get_num_pages(categories[i]))
 
-        self.cache = temp_list[:]
+        temp_list.sort(key=lambda x: x['id'], reverse=True)
+
+        self.cache: list = temp_list
         return self.cache
 
 
