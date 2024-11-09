@@ -11,6 +11,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+circular_list_cache = CircularListCache()
 
 @app.exception_handler(500)
 async def handler_500(err, e):
@@ -135,7 +136,7 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
         amount = 3
 
     # If title is a circular title, get a list of all circulars by scraping the website
-    res = await search_algo(query, amount)
+    res = await search_algo(circular_list_cache, query, amount)
     return_list = copy.deepcopy(success_response)
 
     if res is None:

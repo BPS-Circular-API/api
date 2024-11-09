@@ -350,31 +350,36 @@ async def search_from_id(_id: int):
 
     return None
 
+class CircularListCache:
+    def __init__(self):
+        self.cache: list = []
+        self.expiry: int = -1
 
-async def refresh_all_circular_objects():
-    global all_circular_objects
-    all_circular_objects[0] = []
+    async def refresh_circulars(self) -> list:
+        # expiry in 6 hours
+        self.expiry = int(time.time()) + 21600
 
-    # expire in 6 hours
-    all_circular_objects[1] = int(time.time()) + 21600
+        # We don't write to cache directly because we don't want other functions being affected by empty/incomplete
+        # cache for the duration of get_list()
+        temp_list = []
+        for i in categories.keys():
+            temp_list += await get_list(categories[i], await get_num_pages(categories[i]))
 
-    for i in categories.keys():
-        all_circular_objects[0] += await get_list(categories[i], await get_num_pages(categories[i]))
-    return all_circular_objects
-
-
-# index 0 is the list of all circulars, index 1 is the expiry epoch
-all_circular_objects = [[], 0]
+        self.cache = temp_list[:]
+        return self.cache
 
 
-async def search_algo(query: str, amount: int):
-    if all_circular_objects[1] == 0 or all_circular_objects[1] < int(time.time()):
-        circular_objs: list = (await refresh_all_circular_objects())[0]
+
+async def search_algo(circular_list_cache: CircularListCache, query: str, amount: int):
+    if circular_list_cache.expiry < int(time.time()):
+        circular_objs: list = await circular_list_cache.refresh_circulars()
     else:
-        circular_objs = all_circular_objects[0]
+        circular_objs = circular_list_cache.cache
 
     search_results = []
     query = query.lower().replace("-", "").replace("&", "")
+
+    # Remove '&' and '-' from circular titles, also make them lower case
     circulars_lower = [circular_title['title'].lower() for circular_title in circular_objs]
     circulars_lower = [circular_title.replace("&", '').replace("-", "") for circular_title in circulars_lower]
 
