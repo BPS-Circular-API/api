@@ -72,6 +72,9 @@ async def _get_circular_list(category: str | int):
     # Get the circular list
     res = await get_list(category, num_pages)
 
+    # Add the category key to every circular object
+    res = [{**data, 'category': category} for data in res]
+
     # Add the result to the return list
     return_list = copy.deepcopy(success_response)
     return_list['data'] = res
@@ -105,12 +108,14 @@ async def _get_latest_circular(category: str | int):
 
     try:
         res = await get_latest(category)
+        res['category'] = category
         return_list['data'] = res
 
     except Exception as e:
         error = copy.deepcopy(error_response)
         error['error'] = f'Invalid category'
         error['http_status'] = 422
+
         return JSONResponse(content=error, status_code=422)
 
     return return_list
