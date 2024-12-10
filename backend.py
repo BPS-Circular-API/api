@@ -359,11 +359,14 @@ class CircularListCache:
         # expiry in 6 hours
         self.expiry = int(time.time()) + 21600
 
-        # We don't write to cache directly because we don't want other functions being affected by empty/incomplete
-        # cache for the duration of get_list()
+        # We don't write to cache directly because we don't want other functions being affected
+        # by empty/incomplete cache for the duration of get_list()
         temp_list: list = []
-        for i in categories.keys():
-            temp_list += await get_list(categories[i], await get_num_pages(categories[i]))
+        for category in categories.keys():
+            data = await get_list(categories[category], await get_num_pages(categories[category]))
+            data = [{**item, "category": category} for item in data]
+
+            temp_list.extend(data)
 
         temp_list.sort(key=lambda x: x['id'], reverse=True)
 
