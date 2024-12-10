@@ -352,11 +352,11 @@ async def search_from_id(_id: int):
 
 class CircularListCache:
     def __init__(self):
-        self.cache: list = []
+        self._cache: list = []
         self.expiry: int = -1
 
-    async def refresh_circulars(self) -> list:
-        # expiry in 6 hours
+    async def refresh_circulars(self) -> None:
+        # expire in 6 hours
         self.expiry = int(time.time()) + 21600
 
         # We don't write to cache directly because we don't want other functions being affected
@@ -370,16 +370,20 @@ class CircularListCache:
 
         temp_list.sort(key=lambda x: x['id'], reverse=True)
 
-        self.cache: list = temp_list
-        return self.cache
+        self._cache: list = temp_list
+        return
+
+    async def get_cache(self) -> list:
+        if self.expiry < time.time():
+            self._cache = await circular_list_cache.refresh_circulars()
+            return self.cache
+        else:
+            return self._cache
 
 
 
 async def search_algo(circular_list_cache: CircularListCache, query: str, amount: int):
-    if circular_list_cache.expiry < int(time.time()):
-        circular_objs: list = await circular_list_cache.refresh_circulars()
-    else:
-        circular_objs = circular_list_cache.cache
+    circular_objs = await circular_list_cache.get_cache()
 
     search_results = []
     query = query.lower().replace("-", "").replace("&", "")

@@ -226,22 +226,25 @@ async def _get_circular_images(image_path) -> JSONResponse:
 
 
 @app.get("/new-circulars/{circular_id}")
-async def _new_circulars(circular_id: int):
+async def _new_circulars(circular_id: int = None):
     """Returns the circulars succeeding the given one."""
-    if circular_list_cache.expiry < time.time():
-        circular_list = await circular_list_cache.refresh_circulars()
-    else:
-        circular_list = circular_list_cache.cache
+    circular_list = await circular_list_cache.get_cache()
 
-    for index in range(len(circular_list)):
-        if circular_list[index]['id'] == str(circular_id):
-            passed_circular_index = index
-            break
+    # If no circular_id is passed, every circular is 'new'
+    # Search for the target circular in the sorted list and return all succeeding ones
+    # If target circular is not found, give a 422 to the user
+    if circular_id is None:
+        passed_circular_index = None
     else:
-        error = copy.deepcopy(error_response)
-        error['error'] = f'Circular ID does not exist'
-        error['http_status'] = 422
-        return JSONResponse(content=error, status_code=422)
+        for index in range(len(circular_list)):
+            if circular_list[index]['id'] == str(circular_id):
+                passed_circular_index = index
+                break
+        else:
+            error = copy.deepcopy(error_response)
+            error['error'] = f'Circular ID does not exist'
+            error['http_status'] = 422
+            return JSONResponse(content=error, status_code=422)
 
     return_list = copy.deepcopy(success_response)
     return_list['data'] = circular_list[:passed_circular_index]
