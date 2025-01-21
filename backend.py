@@ -114,7 +114,8 @@ try:
 
 except Exception as err:
     log.critical("Error reading config.ini. Error: " + str(err))
-    log_level = "INFO"
+    import sys
+    sys.exit()
 
 # set log level
 log.setLevel(log_level.upper() if log_level.upper() in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] else "INFO")
@@ -375,10 +376,8 @@ class CircularListCache:
 
     async def get_cache(self) -> list:
         if self.expiry < time.time():
-            self._cache = await circular_list_cache.refresh_circulars()
-            return self.cache
-        else:
-            return self._cache
+            await self.refresh_circulars()
+        return self._cache
 
 
 

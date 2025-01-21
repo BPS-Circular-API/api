@@ -224,7 +224,7 @@ async def _get_circular_images(image_path) -> JSONResponse:
 
     return FileResponse(f"./circularimages/{image_path}")
 
-
+@app.get("/new-circulars/")
 @app.get("/new-circulars/{circular_id}")
 async def _new_circulars(circular_id: int = None):
     """Returns the circulars succeeding the given one."""
