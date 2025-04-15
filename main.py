@@ -232,7 +232,7 @@ async def _new_circulars(circular_id: int = None):
 
     # If no circular_id is passed, every circular is 'new'
     # Search for the target circular in the sorted list and return all succeeding ones
-    # If target circular is not found, give a 422 to the user
+    # If target circular is not found, return all circulars whose id is greater than the target circular
     if circular_id is None:
         passed_circular_index = None
     else:
@@ -240,11 +240,26 @@ async def _new_circulars(circular_id: int = None):
             if circular_list[index]['id'] == str(circular_id):
                 passed_circular_index = index
                 break
+        # Circular not found
         else:
-            error = copy.deepcopy(error_response)
-            error['error'] = f'Circular ID does not exist'
-            error['http_status'] = 422
-            return JSONResponse(content=error, status_code=422)
+
+            if str(circular_id).isnumeric():
+                circular_id = int(circular_id)
+            else:
+                error = copy.deepcopy(error_response)
+                error['error'] = f'Invalid circular id'
+                error['http_status'] = 422
+                return JSONResponse(content=error, status_code=422)
+
+
+            passed_circular_index = None
+            for index in range(len(circular_list)):
+                if int(circular_list[index]['id']) > int(circular_id):
+                    passed_circular_index = index + 1
+                    print(passed_circular_index)
+                    print(circular_list[:passed_circular_index])
+                    break
+
 
     return_list = copy.deepcopy(success_response)
     return_list['data'] = circular_list[:passed_circular_index]
