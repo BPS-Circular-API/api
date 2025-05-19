@@ -236,8 +236,6 @@ async def _new_circulars(circular_id: int = None):
     if circular_id is None:
         passed_circular_index: None = None
     else:
-
-
         try:
             circular_id: int = int(circular_id)
         except ValueError:
@@ -253,9 +251,8 @@ async def _new_circulars(circular_id: int = None):
                 break
         # If the circular id is invalid
         else:
-
             passed_circular_index = None
-            for index in range(len(circular_list)):
+            for index in range(len(circular_list))[::-1]:
                 if int(circular_list[index]['id']) > circular_id:
                     passed_circular_index = index + 1
                     break
