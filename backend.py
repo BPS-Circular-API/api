@@ -357,8 +357,8 @@ class CircularListCache:
         self.expiry: int = -1
 
     async def refresh_circulars(self) -> None:
-        # expire in 6 hours
-        self.expiry = int(time.time()) + 21600
+        # expire in 1 min
+        self.expiry = int(time.time()) + 60
 
         # We don't write to cache directly because we don't want other functions being affected
         # by empty/incomplete cache for the duration of get_list()
