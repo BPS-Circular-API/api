@@ -82,54 +82,89 @@ log = logging.getLogger("bps-circular-api")
 # Getting config
 config = configparser.ConfigParser()
 
-try:
-    # check if ./data/config.ini exists
-    if os.path.exists('./data/config.ini'):
-        config.read('./data/config.ini')
-    elif os.path.exists('api/data/config.ini'):
-        config.read('api/data/config.ini')
-    elif os.path.exists("../data/config.ini"):
-        config.read("../data/config.ini")
+# Get the absolute path to the directory containing this file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(BASE_DIR, 'data', 'config.ini')
 
+try:
+    if not os.path.exists(CONFIG_PATH):
+        raise FileNotFoundError(f"Configuration file not found at {CONFIG_PATH}")
+    config.read(CONFIG_PATH)
 
 except Exception as e:
-    print("Error reading the config.ini file. Error: " + str(e))
+    log.error(f"Error reading the config.ini file: {e}")
     exit()
 
 try:
     log_level: str = config.get('main', 'log_level')
     base_api_url: str = config.get('main', 'base_api_url')
+    # The following lines for db_path and temp_dir are removed as they are handled below
 
-    # get a dict of all the categories
-    categories = dict(config.items('categories'))
+except configparser.NoOptionError as e:
+    log.error(f"Configuration error: {e}")
+    exit()
 
-    # make sure all the values are integers
-    for category in categories.keys():
-        try:
-            categories[category] = int(categories[category])
-        except ValueError:
-            categories[category] = categories[category]
-            log.debug("Couldn't int() a category. Must be textual")
-    log.debug(categories)
+# Define paths relative to the script's location
+DB_PATH = os.path.join(BASE_DIR, 'data', 'data.db')
+TEMP_DIR = os.path.join(BASE_DIR, 'data', 'temp')
 
-except Exception as err:
-    log.critical("Error reading config.ini. Error: " + str(err))
-    import sys
-    sys.exit()
-
-# set log level
-log.setLevel(log_level.upper() if log_level.upper() in ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] else "INFO")
-log.debug(f"Log level set to {log.level}")
-
-# remove trailing slash from base_api_url
-base_api_url = base_api_url.rstrip('/')
+# Ensure the temp directory exists
+os.makedirs(TEMP_DIR, exist_ok=True)
 
 
-#
-#
-#
-#
-#
+class CircularListCache:
+    def __init__(self):
+        """
+        A class that caches the circular list in a database.
+        """
+        self.conn = sqlite3.connect(DB_PATH)
+        self.cur = self.conn.cursor()
+        self.create_table()
+        self.porter_stemmer = PorterStemmer()
+
+    def create_table(self):
+        """
+        Creates the list_cache table if it doesn't exist.
+        """
+        self.cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS list_cache (
+                id INTEGER PRIMARY KEY,
+                title TEXT NOT NULL,
+                link TEXT NOT NULL
+            )
+            """
+        )
+        self.conn.commit()
+
+    async def close(self):
+        """
+        Closes the database connection.
+        """
+        await self.conn.close()
+
+    async def refresh_circulars(self) -> None:
+        # expire in 1 min
+        self.expiry = int(time.time()) + 60
+
+        # We don't write to cache directly because we don't want other functions being affected
+        # by empty/incomplete cache for the duration of get_list()
+        temp_list: list = []
+        for category in categories.keys():
+            data = await get_list(categories[category], await get_num_pages(categories[category]))
+            data = [{**item, "category": category} for item in data]
+
+            temp_list.extend(data)
+
+        temp_list.sort(key=lambda x: x['id'], reverse=True)
+
+        self._cache: list = temp_list
+        return
+
+    async def get_cache(self) -> list:
+        if self.expiry < time.time():
+            await self.refresh_circulars()
+        return self._cache
 
 
 async def get_num_pages(category_id):
@@ -351,73 +386,87 @@ async def search_from_id(_id: int):
 
     return None
 
-class CircularListCache:
-    def __init__(self):
-        self._cache: list = []
-        self.expiry: int = -1
 
-    async def refresh_circulars(self) -> None:
-        # expire in 1 min
-        self.expiry = int(time.time()) + 60
+async def get_pdf(url):
+    """
+    Downloads a PDF from a URL and saves it to a temporary directory.
+    :param url: The URL of the PDF to download.
+    :return: The path to the downloaded PDF.
+    """
+    # Get the filename from the URL
+    filename = url.split("/")[-1]
 
-        # We don't write to cache directly because we don't want other functions being affected
-        # by empty/incomplete cache for the duration of get_list()
-        temp_list: list = []
-        for category in categories.keys():
-            data = await get_list(categories[category], await get_num_pages(categories[category]))
-            data = [{**item, "category": category} for item in data]
+    # Create the temporary directory if it doesn't exist
+    os.makedirs(TEMP_DIR, exist_ok=True)
 
-            temp_list.extend(data)
+    # Download the file
+    r = requests.get(url, allow_redirects=True)
+    with open(os.path.join(TEMP_DIR, filename), 'wb') as f:
+        f.write(r.content)
 
-        temp_list.sort(key=lambda x: x['id'], reverse=True)
-
-        self._cache: list = temp_list
-        return
-
-    async def get_cache(self) -> list:
-        if self.expiry < time.time():
-            await self.refresh_circulars()
-        return self._cache
+    # Return the path to the downloaded file
+    return os.path.join(TEMP_DIR, filename)
 
 
+async def get_text_from_pdf(file_path):
+    """
+    Extracts text from a PDF file.
+    :param file_path: The path to the PDF file.
+    :return: The extracted text.
+    """
+    # Open the PDF file
+    pdf_file = pdfium.PdfDocument(file_path)
 
-async def search_algo(circular_list_cache: CircularListCache, query: str, amount: int):
-    circular_objs = await circular_list_cache.get_cache()
+    text = ""
+    # Extract text from each page
+    for page in pdf_file:
+        text += page.get_textpage().get_text_range()
 
-    search_results = []
-    query = query.lower().replace("-", "").replace("&", "")
+    """
+    # Delete the temporary file
+    os.remove(file_path)
+    """
 
-    # Remove '&' and '-' from circular titles, also make them lower case
-    circulars_lower = [circular_title['title'].lower() for circular_title in circular_objs]
-    circulars_lower = [circular_title.replace("&", '').replace("-", "") for circular_title in circulars_lower]
+    return text
 
-    # Initialize the stemmer and stop words
-    stemmer = PorterStemmer()
-    stop_words = set(stopwords.words("english"))
 
-    keyword_stem = stemmer.stem(query)
+async def cleanup():
+    """
+    Cleans up temporary files and directories.
+    """
+    """
+    # Delete all files in the temporary directory
+    for file in os.listdir(TEMP_DIR):
+        os.remove(os.path.join(TEMP_DIR, file))
+    log.info("Cleaned up temporary files.")
+    """
 
-    for index, circular in enumerate(circulars_lower):
-        circular_tokens = nltk.word_tokenize(circular.lower())
 
-        # Apply stemming and remove stop words
-        circular_filtered = [stemmer.stem(word) for word in circular_tokens if word not in stop_words]
-        circular_filtered = " ".join(circular_filtered)
+async def get_categories():
+    """
+    Gets the list of categories from the BPS website.
+    :return: A dictionary of categories and their IDs.
+    """
+    # Get the page
+    r = requests.get(f"{bps_url}/circular/category/2-circulars", headers=headers)
+    soup = BeautifulSoup(r.content, "html.parser", parse_only=SoupStrainer("a"))
 
-        # Check for exact word matches first
-        if keyword_stem in circular_filtered:
-            search_results.append((index, circular, 1.0))
-        else:
-            # If no exact word match, calculate similarity for partial sentence matches
-            similarity = difflib.SequenceMatcher(None, keyword_stem, circular_filtered).ratio()
-            search_results.append((index, circular, similarity))
+    # Find all links with the href containing "circular/category"
+    links = soup.find_all("a", href=lambda href: href and "circular/category" in href)
 
-    # Sort the search results by similarity and index
-    search_results.sort(key=lambda x: (-x[2], x[0]))
+    # Create a dictionary of categories and their IDs
+    categories = {}
+    for link in links:
+        # Get the category name from the link text
+        category_name = link.text.strip().lower()
+        # Get the category id from the link href
+        category_id = int(link['href'].split("/")[-1].split("-")[0])
+        categories[category_name] = category_id
 
-    if search_results[0][1] == query:
-        return [circular_objs[search_results[0][0]]]
+    return categories
 
-    # Otherwise, return up to 'amount' results
-    results = [circular_objs[result[0]] for result in search_results[:amount]]
-    return results
+
+categories = asyncio.run(get_categories())
+log.info(f"Got categories: {categories}")
+asyncio.run(cleanup())
+CircularListCache()
