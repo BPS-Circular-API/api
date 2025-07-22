@@ -158,9 +158,7 @@ async def _search(query: str | int, amount: int = 3):  # TODO try to make search
 async def _get_png(url):
     circular_pdf_regex = r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)" \
                          r"\/circular\/category\/[0-9]+.*\?download=[0-9]+"
-    primary_circular_pdf_regex = (r"^(http:\/\/www\.|https:\/\/www\.|http:\/\/|https:\/\/)bpsdoha\.(com|net|edu\.qa)"
-                                  r"\/primaryi\/primary-circular\?download=[0-9]+")
-    if not re.match(circular_pdf_regex, url) and not re.match(primary_circular_pdf_regex, url):
+    if not re.match(circular_pdf_regex, url):
         error = copy.deepcopy(error_response)
         error['error'] = f'Invalid URL'
         error['http_status'] = 422
@@ -183,30 +181,36 @@ async def _get_png(url):
 @app.get("/circular-image/{image_path}")
 async def _get_circular_images(image_path) -> JSONResponse:
     # return ./circularimages/{image_path} as an image
-    if not os.path.exists(f"./circularimages/{image_path}"):
 
+    if not os.path.exists("./circularimages/"):
+        os.makedirs("./circularimages/")
+
+    # If the image isn't already saved to disk
+    if not os.path.exists(f"./circularimages/{image_path}"):
         try:
             # If the imagepath is a circular id with .png extension
             if image_path[:4].isdigit() and image_path.endswith(".png"):
-                # if image is not referring to first page of circular
-                if "-" in image_path:
-                    log.debug("Image is not first page of circular")
-                    raise LookupError
 
-                # try to get the circular
+                # # if image is not referring to first page of circular
+                # if "-" in image_path:
+                #     log.debug("Image is not first page of circular")
+                #     raise LookupError
+
+                # Try to fetch the circular to see if it exists
                 res = await search_from_id(image_path[:4])
                 if res is None:
                     log.debug("Circular not found")
                     raise LookupError
 
-                # Try to get the image
+                # Try to fetch the image from the website
                 res = await get_png(res['link'])
                 if res is None:
                     log.debug("Image not found")
                     raise LookupError
 
-                # if the image exists now
+                # If the requested circular image is now on disk
                 if os.path.exists(f"./circularimages/{image_path}"):
+                    # Ignore the PyCharm warning here
                     return FileResponse(f"./circularimages/{image_path}")
                 else:
                     log.debug("Image still not found")
@@ -224,6 +228,9 @@ async def _get_circular_images(image_path) -> JSONResponse:
 
     return FileResponse(f"./circularimages/{image_path}")
 
+
+# This endpoint was added to simplify apps that notify when new circulars come out.
+# It returns the circulars succeeding {circular_id}.
 @app.get("/new-circulars/")
 @app.get("/new-circulars/{circular_id}")
 async def _new_circulars(circular_id: int = None):
@@ -236,6 +243,7 @@ async def _new_circulars(circular_id: int = None):
     if circular_id is None:
         passed_circular_index: None = None
     else:
+        # Check if the passed circular id is a valid integer
         try:
             circular_id: int = int(circular_id)
         except ValueError:
@@ -244,19 +252,22 @@ async def _new_circulars(circular_id: int = None):
             error['http_status'] = 422
             return JSONResponse(content=error, status_code=422)
 
-        # If the circular id is valid
+        # Iterate through the circulars in circular_list  and get the index
+        # of the target circular (> circular_id)
         for index in range(len(circular_list)):
             if int(circular_list[index]['id']) == circular_id:
-                passed_circular_index = index
+                passed_circular_index: int = index
                 break
-        # If the circular id is invalid
+        # If the circular isn't found in the circular list; the ID is invalid
+        # Find the index of the first valid circular >circular_id
         else:
             passed_circular_index = None
             for index in range(len(circular_list))[::-1]:
                 if int(circular_list[index]['id']) > circular_id:
                     passed_circular_index = index + 1
                     break
-
+            else:
+                passed_circular_index: int = 0
 
     return_list = copy.deepcopy(success_response)
     return_list['data'] = circular_list[:passed_circular_index]

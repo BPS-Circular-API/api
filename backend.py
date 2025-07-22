@@ -14,15 +14,24 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
+# Find and install required nltk tools if they don't exist
 try:
     nltk.data.find('tokenizers/punkt')
 except LookupError:
     nltk.download('punkt')
+    nltk.data.find('tokenizers/punkt')
 
 try:
     nltk.data.find('corpora/stopwords')
 except LookupError:
     nltk.download('stopwords')
+    nltk.data.find('corpora/stopwords')
+
+# try:
+#     nltk.data.find('punkt_tab')
+# except LookupError:
+#     nltk.download('punkt_tab')
+#     nltk.data.find('punkt_tab')
 
 success_response = {
     "status": "success",
@@ -42,7 +51,7 @@ headers = {
 }
 
 bps_url = "https://bpsdoha.com"
-category_id_prefixes = ["circular/category", "primaryi"]
+category_id_prefixes = ["circular/category"]
 
 
 # Initializing the Logger
@@ -76,7 +85,7 @@ class LogConfig(BaseModel):
 
 
 # Initiate the logging config
-dictConfig(LogConfig().dict())
+dictConfig(LogConfig().model_dump())
 log = logging.getLogger("bps-circular-api")
 
 # Getting config
@@ -274,32 +283,21 @@ async def get_png(download_url: str) -> str or None:
 
     for page, pgno in zip(pdf, range(len(pdf))):
 
-        pil_image = page.render().to_pil(
-            # scale=5,
-            # rotation=0,
-            # crop=(0, 0, 0, 0),  # Crop doesn't work for some reason
-            # colour=(255, 255, 255, 255),
-            # annotations=True,
-            # greyscale=False,
-            # optimise_mode=pdfium.OptimiseMode.NONE,
-        )
-        # check if the page is empty, by checking if the image is all white
+        # Convert the PDF to an image
+        pil_image = page.render().to_pil()
 
+        # check if the page is empty, by checking if the image is all white
         if await is_blank(pil_image):
             continue
 
         if pgno == 0:
             pil_image.save(f"./circularimages/{file_id}.png")
-        else:
-            pil_image.save(f"./circularimages/{file_id}-{pgno + 1}.png")
-
-        pil_image.close()
-
-        if pgno == 0:
             page_list.append(f"{base_api_url}/circular-image/{file_id}.png")
         else:
+            pil_image.save(f"./circularimages/{file_id}-{pgno + 1}.png")
             page_list.append(f"{base_api_url}/circular-image/{file_id}-{pgno + 1}.png")
 
+        pil_image.close()
     return page_list
 
 
@@ -335,7 +333,7 @@ async def search_from_id(_id: int):
         # Get the list of circulars
         circular_list = await get_list(category_id, await get_num_pages(category_id))
 
-        # Check if the circular is in the list
+        # Check if the circular is in the fetched list
         for circular in circular_list:
             circular['id'] = int(circular['id'])
 
