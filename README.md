@@ -1,6 +1,8 @@
 ![Lines of code](https://img.shields.io/tokei/lines/github.com/BPS-Circular-API/api) 
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/Django)
 
+---
+
 # BPS Circular API
 
 A simple Python API made to work with circulars posted to the BPS website.
