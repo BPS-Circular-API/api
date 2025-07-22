@@ -31,3 +31,4 @@ The data folder contains the database and the config file.
 - Shanvanth Arunmozhi
 - Nived Venugopalan
 - Muhammed Rayan
+- Jonathan Oommen Easow
