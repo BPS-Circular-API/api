@@ -14,6 +14,14 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(SCRIPT_DIR, 'data')
+CONFIG_PATH = os.path.join(DATA_DIR, 'config.ini')
+DATABASE_PATH = os.path.join(DATA_DIR, 'data.db')
+CIRCULAR_IMAGES_DIR = os.path.join(SCRIPT_DIR, 'circularimages')
+os.makedirs(CIRCULAR_IMAGES_DIR, exist_ok=True)
+
+
 # Find and install required nltk tools if they don't exist
 try:
     nltk.data.find('tokenizers/punkt')
@@ -92,13 +100,11 @@ log = logging.getLogger("bps-circular-api")
 config = configparser.ConfigParser()
 
 try:
-    # check if ./data/config.ini exists
-    if os.path.exists('./data/config.ini'):
-        config.read('./data/config.ini')
-    elif os.path.exists('api/data/config.ini'):
-        config.read('api/data/config.ini')
-    elif os.path.exists("../data/config.ini"):
-        config.read("../data/config.ini")
+    if os.path.exists(CONFIG_PATH):
+        config.read(CONFIG_PATH)
+    else:
+        log.critical(f"Could not find config.ini at {CONFIG_PATH}")
+        exit()
 
 
 except Exception as e:
@@ -236,12 +242,12 @@ async def get_latest(category_id):
 async def get_png(download_url: str) -> str or None:
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
-    if os.path.isfile(f"./circularimages/{file_id}.png"):
+    if os.path.isfile(os.path.join(CIRCULAR_IMAGES_DIR, f"{file_id}.png")):
 
         page_list = []
         temp = 0
 
-        for file in os.listdir("./circularimages"):
+        for file in os.listdir(CIRCULAR_IMAGES_DIR):
             if file.endswith(".png"):
                 if file_id in file:
                     temp += 1
@@ -266,8 +272,8 @@ async def get_png(download_url: str) -> str or None:
         log.error(f"Error parsing PDF. Error: {e}")
         return []
 
-    if not os.path.isdir("./circularimages"):  # Create the directory if it doesn't exist
-        os.mkdir("./circularimages")
+    if not os.path.isdir(CIRCULAR_IMAGES_DIR):
+        os.mkdir(CIRCULAR_IMAGES_DIR)
 
     page_list = []
 
@@ -291,10 +297,10 @@ async def get_png(download_url: str) -> str or None:
             continue
 
         if pgno == 0:
-            pil_image.save(f"./circularimages/{file_id}.png")
+            pil_image.save(os.path.join(CIRCULAR_IMAGES_DIR, f"{file_id}.png"))
             page_list.append(f"{base_api_url}/circular-image/{file_id}.png")
         else:
-            pil_image.save(f"./circularimages/{file_id}-{pgno + 1}.png")
+            pil_image.save(os.path.join(CIRCULAR_IMAGES_DIR, f"{file_id}-{pgno + 1}.png"))
             page_list.append(f"{base_api_url}/circular-image/{file_id}-{pgno + 1}.png")
 
         pil_image.close()
@@ -305,12 +311,8 @@ async def search_from_id(_id: int):
     _id = int(_id)
 
     # Try to find the circular in the database
-    if os.path.exists(".data/data.db"):
-        con = sqlite3.connect(".data/data.db")
-    elif os.path.exists("../data/data.db"):
-        con = sqlite3.connect("../data/data.db")
-    elif os.path.exists("data/data.db"):
-        con = sqlite3.connect("data/data.db")
+    if os.path.exists(DATABASE_PATH):
+        con = sqlite3.connect(DATABASE_PATH)
     else:
         log.error("Could not find database")
         return None

@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from backend import *
 import copy
 import re
@@ -13,15 +13,16 @@ app = FastAPI(
 
 circular_list_cache = CircularListCache()
 
+
 @app.exception_handler(500)
-async def handler_500(err, e):
+async def handler_500(request: Request, err):
     error_content = copy.deepcopy(error_response)
     error_content["error"] = str(err)
     return JSONResponse(content=error_content, status_code=500)
 
 
 @app.exception_handler(404)
-async def handler_404(err, e):
+async def handler_404(request: Request, err):
     error_content = copy.deepcopy(error_response)
     error_content['http_status'] = 404
     error_content["error"] = "Not Found"
@@ -29,11 +30,11 @@ async def handler_404(err, e):
 
 
 @app.get("/")
-async def root():
+async def root(request: Request):
     return_list = copy.deepcopy(success_response)
     # noinspection PyTypedDict
     return_list["data"] = "Welcome to the API. Please refer to the documentation " \
-                          "at https://bpsapi.rajtech.me/docs for more information."
+                          f"at {request.base_url}docs for more information."
     return return_list
 
 
@@ -273,3 +274,4 @@ async def _new_circulars(circular_id: int = None):
     return_list['data'] = circular_list[:passed_circular_index]
 
     return return_list
+
