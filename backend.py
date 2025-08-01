@@ -91,6 +91,13 @@ class LogConfig(BaseModel):
         "bps-circular-api": {"handlers": ["default"], "level": LOG_LEVEL},
     }
 
+class IgnoreRootRequests(logging.Filter):
+    def filter(self, record):
+        return 'GET / ' not in record.getMessage()
+
+# Set up the logging filter
+access_logger = logging.getLogger("uvicorn.access")
+access_logger.addFilter(IgnoreRootRequests())
 
 # Initiate the logging config
 dictConfig(LogConfig().model_dump())
