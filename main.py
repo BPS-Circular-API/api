@@ -7,8 +7,8 @@ from fastapi.responses import FileResponse
 
 app = FastAPI(
     title="BPS Circular API",
-    description="An API that can work with the circulars of Birla Public School",
-    version="1.0.0",
+    description="An API that works with the circulars of Birla Public School",
+    version="1.1.0",
 )
 
 circular_list_cache = CircularListCache()
