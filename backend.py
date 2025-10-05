@@ -245,7 +245,6 @@ async def get_latest(category_id):
 
     return {'title': name, 'link': url, 'id': id_}
 
-
 async def get_png(download_url: str) -> str or None:
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
