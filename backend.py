@@ -59,7 +59,6 @@ headers = {
 }
 
 bps_url = "https://bpsdoha.com"
-category_id_prefixes = ["circular/category"]
 
 
 # Initializing the Logger
@@ -155,10 +154,7 @@ base_api_url = base_api_url.rstrip('/')
 
 
 async def get_num_pages(category_id):
-    if type(category_id) is int:
-        url = f"{bps_url}/{category_id_prefixes[0]}/{category_id}"
-    else:
-        url = f"{bps_url}/{category_id_prefixes[1]}/{category_id}"
+    url = f"{bps_url}/circular/category/{category_id}"
 
     response = requests.get(url, headers=headers)
 
@@ -184,11 +180,7 @@ async def get_num_pages(category_id):
 
 
 def thread_get_list(category_id, page):
-    if type(category_id) is int:
-        url = f"{bps_url}/{category_id_prefixes[0]}/{category_id}"
-    else:
-        url = f"{bps_url}/{category_id_prefixes[1]}/{category_id}"
-
+    url = f"{bps_url}/circular/category/{category_id}"
     url += f"?start={(page - 1) * 20}"
 
     response = requests.get(url, headers=headers)
@@ -227,10 +219,7 @@ async def get_list(category_id, pages):
 
 
 async def get_latest(category_id):
-    if type(category_id) is int:
-        url = f"{bps_url}/{category_id_prefixes[0]}/{category_id}"
-    else:
-        url = f"{bps_url}/{category_id_prefixes[1]}/{category_id}"
+    url = f"{bps_url}/circular/category/{category_id}"
 
     response = requests.get(url, headers=headers)
 
@@ -245,7 +234,8 @@ async def get_latest(category_id):
 
     return {'title': name, 'link': url, 'id': id_}
 
-async def get_png(download_url: str) -> str or None:
+
+async def get_png(download_url: str) -> list | None:
     file_id = download_url.split('=')[1].split(":")[0]  # Get the 4 digit file ID
 
     if os.path.isfile(os.path.join(CIRCULAR_IMAGES_DIR, f"{file_id}.png")):
